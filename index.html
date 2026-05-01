@@ -6,144 +6,138 @@
 <title>図書貸出</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/zxing-js/0.19.1/umd/index.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
 <style>
   :root {
-    --ink:    #1a1a18;
-    --paper:  #f5f2ec;
-    --cream:  #ece8df;
-    --accent: #8b5e3c;
-    --blue:   #3c6e8b;
-    --green:  #3a6b4a;
-    --red:    #8b3a3a;
-    --shadow: rgba(26,26,24,0.08);
-    --border: rgba(26,26,24,0.12);
+    --ink:#1a1a18;--paper:#f5f2ec;--cream:#ece8df;--accent:#8b5e3c;--blue:#3c6e8b;--green:#3a6b4a;--red:#8b3a3a;--shadow:rgba(26,26,24,0.08);--border:rgba(26,26,24,0.12);
   }
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: 'Noto Serif JP', serif; background: var(--paper); color: var(--ink); min-height: 100vh; overflow-x: hidden; }
-  body::before { content: ''; position: fixed; inset: 0; background-image: repeating-linear-gradient(0deg, transparent, transparent 28px, rgba(26,26,24,.025) 28px, rgba(26,26,24,.025) 29px); pointer-events: none; z-index: 0; }
-  .app-wrap { max-width: 480px; margin: 0 auto; padding: 24px 20px 60px; position: relative; z-index: 1; }
-  .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 32px; padding-bottom: 16px; border-bottom: 2px solid var(--ink); }
-  .header-left { display: flex; align-items: baseline; gap: 12px; }
-  .header-title { font-size: 26px; font-weight: 600; letter-spacing: .05em; line-height: 1; }
-  .header-sub { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--accent); letter-spacing: .12em; text-transform: uppercase; }
-  .header-mgmt { padding: 6px 12px; border: 1px solid var(--border); border-radius: 3px; font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: .08em; color: rgba(26,26,24,.5); cursor: pointer; background: white; transition: all .16s; }
-  .header-mgmt:hover { border-color: var(--accent); color: var(--accent); }
-  .breadcrumb { display: flex; align-items: center; gap: 6px; font-family: 'DM Mono', monospace; font-size: 11px; color: rgba(26,26,24,.45); margin-bottom: 20px; letter-spacing: .06em; min-height: 18px; }
-  .breadcrumb span { cursor: pointer; }
-  .breadcrumb span:hover { color: var(--accent); }
-  .breadcrumb .sep { opacity: .4; }
-  .breadcrumb .current { color: var(--ink); font-weight: 500; }
-  .section-label { font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: .18em; text-transform: uppercase; color: rgba(26,26,24,.4); margin-bottom: 12px; }
-  .owner-card { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; background: white; border: 1px solid var(--border); border-radius: 4px; margin-bottom: 8px; cursor: pointer; transition: all .18s; box-shadow: 0 1px 3px var(--shadow); }
-  .owner-card:hover { border-color: var(--accent); box-shadow: 0 2px 10px rgba(139,94,60,.12); transform: translateX(3px); }
-  .owner-name { font-size: 16px; font-weight: 600; letter-spacing: .04em; }
-  .owner-count { font-family: 'DM Mono', monospace; font-size: 11px; color: rgba(26,26,24,.4); }
-  .owner-arrow { color: var(--accent); font-size: 14px; opacity: .6; margin-left: 8px; }
-  .book-card { display: flex; align-items: center; gap: 14px; padding: 12px 16px; background: white; border: 1px solid var(--border); border-radius: 4px; margin-bottom: 8px; cursor: pointer; transition: all .18s; box-shadow: 0 1px 3px var(--shadow); }
-  .book-card:hover { border-color: var(--blue); box-shadow: 0 2px 10px rgba(60,110,139,.1); transform: translateX(3px); }
-  .book-thumb { width: 44px; height: 60px; border-radius: 3px; border: 1px solid var(--border); flex-shrink: 0; background: var(--cream); overflow: hidden; display: flex; align-items: center; justify-content: center; font-size: 20px; box-shadow: 1px 1px 4px rgba(26,26,24,.1); }
-  .book-thumb img { width: 100%; height: 100%; object-fit: cover; }
-  .book-info { flex: 1; min-width: 0; }
-  .book-title { font-size: 15px; font-weight: 600; margin-bottom: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .book-author { font-family: 'DM Mono', monospace; font-size: 11px; color: rgba(26,26,24,.4); margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .book-meta { font-family: 'DM Mono', monospace; font-size: 11px; color: rgba(26,26,24,.35); }
-  .badge { font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: .08em; padding: 3px 8px; border-radius: 2px; flex-shrink: 0; }
-  .badge.available { background: rgba(58,107,74,.1); color: var(--green); border: 1px solid rgba(58,107,74,.2); }
-  .badge.borrowed { background: rgba(139,58,58,.08); color: var(--red); border: 1px solid rgba(139,58,58,.18); }
-  .detail-card { background: white; border: 1px solid var(--border); border-radius: 4px; padding: 28px 24px; box-shadow: 0 2px 12px var(--shadow); }
-  .detail-cover-wrap { display: flex; justify-content: center; margin-bottom: 24px; }
-  .detail-cover { width: 100px; height: 138px; border-radius: 4px; border: 1px solid var(--border); background: var(--cream); display: flex; align-items: center; justify-content: center; font-size: 40px; box-shadow: 4px 4px 16px rgba(26,26,24,.12), -2px -2px 0 var(--cream); overflow: hidden; }
-  .detail-cover img { width: 100%; height: 100%; object-fit: cover; }
-  .detail-title { font-size: 20px; font-weight: 600; text-align: center; margin-bottom: 4px; line-height: 1.4; }
-  .detail-author { font-family: 'DM Mono', monospace; font-size: 12px; color: rgba(26,26,24,.5); text-align: center; margin-bottom: 4px; }
-  .detail-owner { font-family: 'DM Mono', monospace; font-size: 11px; color: rgba(26,26,24,.35); text-align: center; margin-bottom: 20px; letter-spacing: .06em; }
-  .detail-divider { border: none; border-top: 1px dashed var(--border); margin: 20px 0; }
-  .detail-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
-  .detail-label { font-family: 'DM Mono', monospace; font-size: 11px; color: rgba(26,26,24,.4); letter-spacing: .08em; text-transform: uppercase; }
-  .detail-value { font-weight: 600; font-size: 14px; }
-  .btn-group { display: flex; gap: 10px; margin-top: 24px; }
-  .btn { flex: 1; padding: 13px 0; border: none; border-radius: 3px; font-family: 'Noto Serif JP', serif; font-size: 14px; font-weight: 600; letter-spacing: .08em; cursor: pointer; transition: all .16s; }
-  .btn-primary { background: var(--blue); color: white; }
-  .btn-primary:hover { background: #2e5a73; }
-  .btn-primary:disabled { background: var(--cream); color: rgba(26,26,24,.3); cursor: not-allowed; }
-  .btn-secondary { background: var(--cream); color: var(--ink); border: 1px solid var(--border); }
-  .btn-secondary:hover { background: #e0dbd0; }
-  .btn-secondary:disabled { color: rgba(26,26,24,.3); cursor: not-allowed; }
-  .btn-danger { background: rgba(139,58,58,.08); color: var(--red); border: 1px solid rgba(139,58,58,.2); }
-  .btn-danger:hover { background: rgba(139,58,58,.15); }
-  .btn-back { display: inline-flex; align-items: center; gap: 6px; margin-top: 20px; padding: 0; background: none; border: none; font-family: 'DM Mono', monospace; font-size: 12px; color: rgba(26,26,24,.45); cursor: pointer; letter-spacing: .06em; transition: color .15s; }
-  .btn-back:hover { color: var(--accent); }
-  .input-wrap { margin-top: 16px; display: none; }
-  .input-wrap.visible { display: block; }
-  .input-label { font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: .14em; text-transform: uppercase; color: rgba(26,26,24,.45); margin-bottom: 6px; }
-  .input-field { width: 100%; padding: 10px 14px; border: 1px solid var(--border); border-radius: 3px; font-family: 'Noto Serif JP', serif; font-size: 14px; background: var(--paper); color: var(--ink); outline: none; transition: border-color .15s; }
-  .input-field:focus { border-color: var(--blue); }
-  .empty-state { text-align: center; padding: 48px 0; color: rgba(26,26,24,.35); font-family: 'DM Mono', monospace; font-size: 12px; letter-spacing: .08em; line-height: 2; }
-  .add-book-bar { display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 20px; padding: 13px 0; border: 1.5px dashed var(--border); border-radius: 4px; cursor: pointer; color: rgba(26,26,24,.4); font-family: 'DM Mono', monospace; font-size: 12px; letter-spacing: .1em; transition: all .18s; background: transparent; width: 100%; }
-  .add-book-bar:hover { border-color: var(--blue); color: var(--blue); background: rgba(60,110,139,.04); }
-  .toast { position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(80px); background: var(--ink); color: var(--paper); font-family: 'DM Mono', monospace; font-size: 12px; letter-spacing: .06em; padding: 10px 20px; border-radius: 2px; opacity: 0; transition: all .3s; white-space: nowrap; z-index: 300; }
-  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
-  .screen { animation: fadeIn .22s ease; }
-  @keyframes fadeIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
-  .hidden { display: none !important; }
-  .modal-overlay { position: fixed; inset: 0; background: rgba(26,26,24,.55); backdrop-filter: blur(2px); z-index: 200; display: flex; align-items: flex-end; justify-content: center; animation: overlayIn .2s ease; }
-  .modal-overlay.hidden { display: none !important; }
-  @keyframes overlayIn { from { opacity:0; } to { opacity:1; } }
-  .modal-sheet { background: var(--paper); width: 100%; max-width: 480px; border-radius: 12px 12px 0 0; padding: 28px 24px 44px; animation: sheetUp .26s cubic-bezier(.16,1,.3,1); max-height: 92vh; overflow-y: auto; }
-  @keyframes sheetUp { from { transform:translateY(100%); } to { transform:translateY(0); } }
-  .modal-handle { width: 36px; height: 4px; background: var(--border); border-radius: 2px; margin: 0 auto 24px; }
-  .modal-title { font-size: 17px; font-weight: 600; margin-bottom: 4px; letter-spacing: .03em; }
-  .modal-sub { font-family: 'DM Mono', monospace; font-size: 11px; color: rgba(26,26,24,.4); margin-bottom: 20px; letter-spacing: .06em; }
-  .scanner-wrap { position: relative; width: 100%; aspect-ratio: 4/3; background: #000; border-radius: 8px; overflow: hidden; margin-bottom: 16px; }
-  #scanner-video { width: 100%; height: 100%; object-fit: cover; display: block; }
-  .scanner-frame { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; pointer-events: none; }
-  .scanner-frame::before { content: ''; width: 60%; aspect-ratio: 3/1; border: 2px solid rgba(255,255,255,.8); border-radius: 4px; box-shadow: 0 0 0 9999px rgba(0,0,0,.35); }
-  .scan-line { position: absolute; left: 20%; right: 20%; height: 2px; background: linear-gradient(90deg, transparent, var(--blue), transparent); animation: scanMove 1.8s ease-in-out infinite; top: 50%; }
-  @keyframes scanMove { 0% { transform: translateY(-28px); opacity: .8; } 50% { transform: translateY(28px); opacity: 1; } 100% { transform: translateY(-28px); opacity: .8; } }
-  .scanner-status { text-align: center; font-family: 'DM Mono', monospace; font-size: 12px; color: rgba(26,26,24,.5); letter-spacing: .06em; margin-bottom: 14px; min-height: 18px; }
-  .scanner-status.found { color: var(--green); font-weight: 500; }
-  .scanner-status.error { color: var(--red); }
-  .book-preview { display: none; align-items: center; gap: 16px; padding: 16px; background: white; border: 1px solid var(--border); border-radius: 6px; margin-bottom: 16px; box-shadow: 0 1px 4px var(--shadow); }
-  .book-preview.active { display: flex; }
-  .preview-cover { width: 56px; height: 78px; border-radius: 3px; border: 1px solid var(--border); flex-shrink: 0; overflow: hidden; background: var(--cream); display: flex; align-items: center; justify-content: center; font-size: 24px; }
-  .preview-cover img { width: 100%; height: 100%; object-fit: cover; }
-  .preview-info { flex: 1; min-width: 0; }
-  .preview-title { font-size: 14px; font-weight: 600; line-height: 1.4; margin-bottom: 4px; }
-  .preview-author { font-family: 'DM Mono', monospace; font-size: 11px; color: rgba(26,26,24,.5); margin-bottom: 4px; }
-  .preview-isbn { font-family: 'DM Mono', monospace; font-size: 10px; color: rgba(26,26,24,.3); letter-spacing: .04em; }
-  .lookup-state { display: none; align-items: center; gap: 10px; padding: 12px 16px; background: white; border: 1px solid var(--border); border-radius: 4px; margin-bottom: 16px; font-family: 'DM Mono', monospace; font-size: 12px; color: rgba(26,26,24,.5); letter-spacing: .06em; }
-  .lookup-state.active { display: flex; }
-  .spinner { width: 16px; height: 16px; border: 2px solid var(--border); border-top-color: var(--blue); border-radius: 50%; animation: spin .7s linear infinite; flex-shrink: 0; }
-  @keyframes spin { to { transform:rotate(360deg); } }
-  .manual-input-area { display: none; flex-direction: column; gap: 10px; margin-bottom: 16px; }
-  .manual-input-area.active { display: flex; }
-  .field-group { display: flex; flex-direction: column; gap: 5px; }
-  .field-label { font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: .14em; text-transform: uppercase; color: rgba(26,26,24,.4); }
-  .field-input { width: 100%; padding: 10px 14px; border: 1px solid var(--border); border-radius: 3px; font-family: 'Noto Serif JP', serif; font-size: 14px; background: white; color: var(--ink); outline: none; transition: border-color .15s; }
-  .field-input:focus { border-color: var(--blue); }
-  .divider-text { display: flex; align-items: center; gap: 10px; margin: 4px 0; font-family: 'DM Mono', monospace; font-size: 10px; color: rgba(26,26,24,.3); letter-spacing: .1em; }
-  .divider-text::before, .divider-text::after { content: ''; flex: 1; border-top: 1px solid var(--border); }
-  .mgmt-section { margin-bottom: 32px; }
-  .mgmt-section-title { font-size: 15px; font-weight: 600; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
-  .owner-row { display: flex; align-items: center; gap: 12px; padding: 14px 16px; background: white; border: 1px solid var(--border); border-radius: 4px; margin-bottom: 8px; box-shadow: 0 1px 3px var(--shadow); }
-  .owner-row-emoji { font-size: 20px; }
-  .owner-row-name { flex: 1; font-size: 15px; font-weight: 600; }
-  .owner-row-count { font-family: 'DM Mono', monospace; font-size: 11px; color: rgba(26,26,24,.4); margin-right: 4px; }
-  .owner-row-del { padding: 5px 12px; border: 1px solid rgba(139,58,58,.25); border-radius: 3px; background: none; color: var(--red); font-family: 'DM Mono', monospace; font-size: 11px; cursor: pointer; transition: all .15s; letter-spacing: .04em; }
-  .owner-row-del:hover { background: rgba(139,58,58,.08); }
-  .owner-row-del:disabled { opacity: .3; cursor: not-allowed; }
-  .add-owner-form { display: flex; gap: 10px; margin-top: 14px; }
-  .add-owner-input { flex: 1; padding: 10px 14px; border: 1px solid var(--border); border-radius: 3px; font-family: 'Noto Serif JP', serif; font-size: 14px; background: white; color: var(--ink); outline: none; transition: border-color .15s; }
-  .add-owner-input:focus { border-color: var(--blue); }
-  .add-owner-btn { padding: 10px 18px; border: none; border-radius: 3px; background: var(--blue); color: white; font-family: 'Noto Serif JP', serif; font-size: 14px; font-weight: 600; cursor: pointer; transition: background .15s; white-space: nowrap; }
-  .add-owner-btn:hover { background: #2e5a73; }
-  .confirm-overlay { position: fixed; inset: 0; background: rgba(26,26,24,.6); backdrop-filter: blur(2px); z-index: 400; display: flex; align-items: center; justify-content: center; padding: 24px; animation: overlayIn .18s ease; }
-  .confirm-overlay.hidden { display: none !important; }
-  .confirm-box { background: var(--paper); border-radius: 8px; padding: 28px 24px; max-width: 360px; width: 100%; box-shadow: 0 8px 32px rgba(26,26,24,.2); animation: fadeIn .18s ease; }
-  .confirm-title { font-size: 16px; font-weight: 600; margin-bottom: 10px; }
-  .confirm-body { font-size: 14px; color: rgba(26,26,24,.65); line-height: 1.7; margin-bottom: 24px; }
-  .confirm-btns { display: flex; gap: 10px; }
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:'Noto Serif JP',serif;background:var(--paper);color:var(--ink);min-height:100vh;overflow-x:hidden;}
+  body::before{content:'';position:fixed;inset:0;background-image:repeating-linear-gradient(0deg,transparent,transparent 28px,rgba(26,26,24,.025) 28px,rgba(26,26,24,.025) 29px);pointer-events:none;z-index:0;}
+  .app-wrap{max-width:480px;margin:0 auto;padding:24px 20px 60px;position:relative;z-index:1;}
+  .header{display:flex;align-items:center;justify-content:space-between;margin-bottom:32px;padding-bottom:16px;border-bottom:2px solid var(--ink);}
+  .header-left{display:flex;align-items:baseline;gap:12px;}
+  .header-title{font-size:26px;font-weight:600;letter-spacing:.05em;line-height:1;}
+  .header-sub{font-family:'DM Mono',monospace;font-size:11px;color:var(--accent);letter-spacing:.12em;text-transform:uppercase;}
+  .header-mgmt{padding:6px 12px;border:1px solid var(--border);border-radius:3px;font-family:'DM Mono',monospace;font-size:11px;letter-spacing:.08em;color:rgba(26,26,24,.5);cursor:pointer;background:white;transition:all .16s;}
+  .header-mgmt:hover{border-color:var(--accent);color:var(--accent);}
+  .breadcrumb{display:flex;align-items:center;gap:6px;font-family:'DM Mono',monospace;font-size:11px;color:rgba(26,26,24,.45);margin-bottom:20px;letter-spacing:.06em;min-height:18px;}
+  .breadcrumb span{cursor:pointer;}
+  .breadcrumb span:hover{color:var(--accent);}
+  .breadcrumb .sep{opacity:.4;}
+  .breadcrumb .current{color:var(--ink);font-weight:500;}
+  .section-label{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:rgba(26,26,24,.4);margin-bottom:12px;}
+  .owner-card{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;background:white;border:1px solid var(--border);border-radius:4px;margin-bottom:8px;cursor:pointer;transition:all .18s;box-shadow:0 1px 3px var(--shadow);}
+  .owner-card:hover{border-color:var(--accent);box-shadow:0 2px 10px rgba(139,94,60,.12);transform:translateX(3px);}
+  .owner-name{font-size:16px;font-weight:600;letter-spacing:.04em;}
+  .owner-count{font-family:'DM Mono',monospace;font-size:11px;color:rgba(26,26,24,.4);}
+  .owner-arrow{color:var(--accent);font-size:14px;opacity:.6;margin-left:8px;}
+  .book-card{display:flex;align-items:center;gap:14px;padding:12px 16px;background:white;border:1px solid var(--border);border-radius:4px;margin-bottom:8px;cursor:pointer;transition:all .18s;box-shadow:0 1px 3px var(--shadow);}
+  .book-card:hover{border-color:var(--blue);box-shadow:0 2px 10px rgba(60,110,139,.1);transform:translateX(3px);}
+  .book-thumb{width:44px;height:60px;border-radius:3px;border:1px solid var(--border);flex-shrink:0;background:var(--cream);overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:20px;box-shadow:1px 1px 4px rgba(26,26,24,.1);}
+  .book-thumb img{width:100%;height:100%;object-fit:cover;}
+  .book-info{flex:1;min-width:0;}
+  .book-title{font-size:15px;font-weight:600;margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .book-author{font-family:'DM Mono',monospace;font-size:11px;color:rgba(26,26,24,.4);margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .book-meta{font-family:'DM Mono',monospace;font-size:11px;color:rgba(26,26,24,.35);}
+  .badge{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.08em;padding:3px 8px;border-radius:2px;flex-shrink:0;}
+  .badge.available{background:rgba(58,107,74,.1);color:var(--green);border:1px solid rgba(58,107,74,.2);}
+  .badge.borrowed{background:rgba(139,58,58,.08);color:var(--red);border:1px solid rgba(139,58,58,.18);}
+  .detail-card{background:white;border:1px solid var(--border);border-radius:4px;padding:28px 24px;box-shadow:0 2px 12px var(--shadow);}
+  .detail-cover-wrap{display:flex;justify-content:center;margin-bottom:24px;}
+  .detail-cover{width:100px;height:138px;border-radius:4px;border:1px solid var(--border);background:var(--cream);display:flex;align-items:center;justify-content:center;font-size:40px;box-shadow:4px 4px 16px rgba(26,26,24,.12),-2px -2px 0 var(--cream);overflow:hidden;}
+  .detail-cover img{width:100%;height:100%;object-fit:cover;}
+  .detail-title{font-size:20px;font-weight:600;text-align:center;margin-bottom:4px;line-height:1.4;}
+  .detail-author{font-family:'DM Mono',monospace;font-size:12px;color:rgba(26,26,24,.5);text-align:center;margin-bottom:4px;}
+  .detail-owner{font-family:'DM Mono',monospace;font-size:11px;color:rgba(26,26,24,.35);text-align:center;margin-bottom:20px;letter-spacing:.06em;}
+  .detail-divider{border:none;border-top:1px dashed var(--border);margin:20px 0;}
+  .detail-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+  .detail-label{font-family:'DM Mono',monospace;font-size:11px;color:rgba(26,26,24,.4);letter-spacing:.08em;text-transform:uppercase;}
+  .detail-value{font-weight:600;font-size:14px;}
+  .btn-group{display:flex;gap:10px;margin-top:24px;}
+  .btn{flex:1;padding:13px 0;border:none;border-radius:3px;font-family:'Noto Serif JP',serif;font-size:14px;font-weight:600;letter-spacing:.08em;cursor:pointer;transition:all .16s;}
+  .btn-primary{background:var(--blue);color:white;}
+  .btn-primary:hover{background:#2e5a73;}
+  .btn-primary:disabled{background:var(--cream);color:rgba(26,26,24,.3);cursor:not-allowed;}
+  .btn-secondary{background:var(--cream);color:var(--ink);border:1px solid var(--border);}
+  .btn-secondary:hover{background:#e0dbd0;}
+  .btn-secondary:disabled{color:rgba(26,26,24,.3);cursor:not-allowed;}
+  .btn-danger{background:rgba(139,58,58,.08);color:var(--red);border:1px solid rgba(139,58,58,.2);}
+  .btn-danger:hover{background:rgba(139,58,58,.15);}
+  .btn-back{display:inline-flex;align-items:center;gap:6px;margin-top:20px;padding:0;background:none;border:none;font-family:'DM Mono',monospace;font-size:12px;color:rgba(26,26,24,.45);cursor:pointer;letter-spacing:.06em;transition:color .15s;}
+  .btn-back:hover{color:var(--accent);}
+  .input-wrap{margin-top:16px;display:none;}
+  .input-wrap.visible{display:block;}
+  .input-label{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:rgba(26,26,24,.45);margin-bottom:6px;}
+  .input-field{width:100%;padding:10px 14px;border:1px solid var(--border);border-radius:3px;font-family:'Noto Serif JP',serif;font-size:14px;background:var(--paper);color:var(--ink);outline:none;transition:border-color .15s;}
+  .input-field:focus{border-color:var(--blue);}
+  .empty-state{text-align:center;padding:48px 0;color:rgba(26,26,24,.35);font-family:'DM Mono',monospace;font-size:12px;letter-spacing:.08em;line-height:2;}
+  .add-book-bar{display:flex;align-items:center;justify-content:center;gap:8px;margin-top:20px;padding:13px 0;border:1.5px dashed var(--border);border-radius:4px;cursor:pointer;color:rgba(26,26,24,.4);font-family:'DM Mono',monospace;font-size:12px;letter-spacing:.1em;transition:all .18s;background:transparent;width:100%;}
+  .add-book-bar:hover{border-color:var(--blue);color:var(--blue);background:rgba(60,110,139,.04);}
+  .toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--ink);color:var(--paper);font-family:'DM Mono',monospace;font-size:12px;letter-spacing:.06em;padding:10px 20px;border-radius:2px;opacity:0;transition:all .3s;white-space:nowrap;z-index:300;}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+  .screen{animation:fadeIn .22s ease;}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
+  .hidden{display:none!important;}
+  .modal-overlay{position:fixed;inset:0;background:rgba(26,26,24,.55);backdrop-filter:blur(2px);z-index:200;display:flex;align-items:flex-end;justify-content:center;animation:overlayIn .2s ease;}
+  .modal-overlay.hidden{display:none!important;}
+  @keyframes overlayIn{from{opacity:0;}to{opacity:1;}}
+  .modal-sheet{background:var(--paper);width:100%;max-width:480px;border-radius:12px 12px 0 0;padding:28px 24px 44px;animation:sheetUp .26s cubic-bezier(.16,1,.3,1);max-height:92vh;overflow-y:auto;}
+  @keyframes sheetUp{from{transform:translateY(100%);}to{transform:translateY(0);}}
+  .modal-handle{width:36px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 24px;}
+  .modal-title{font-size:17px;font-weight:600;margin-bottom:4px;letter-spacing:.03em;}
+  .modal-sub{font-family:'DM Mono',monospace;font-size:11px;color:rgba(26,26,24,.4);margin-bottom:20px;letter-spacing:.06em;}
+  #qr-reader{width:100%;border-radius:8px;overflow:hidden;margin-bottom:12px;background:#000;}
+  #qr-reader__scan_region{border-radius:8px;overflow:hidden;}
+  #qr-reader__dashboard{padding:8px 0 0!important;background:transparent!important;border:none!important;}
+  #qr-reader__dashboard_section_swaplink{display:none!important;}
+  #qr-reader__status_span{font-family:'DM Mono',monospace!important;font-size:11px!important;color:rgba(26,26,24,.5)!important;}
+  #qr-reader__camera_selection{width:100%!important;padding:8px 10px!important;border:1px solid var(--border)!important;border-radius:3px!important;font-family:'Noto Serif JP',serif!important;font-size:13px!important;background:white!important;margin-bottom:8px!important;outline:none!important;}
+  #qr-reader__camera_permission_button,#html5-qrcode-button-camera-start,#html5-qrcode-button-camera-stop{padding:10px 0!important;width:100%!important;border:none!important;border-radius:3px!important;font-family:'Noto Serif JP',serif!important;font-size:14px!important;font-weight:600!important;cursor:pointer!important;background:var(--blue)!important;color:white!important;margin:4px 0!important;}
+  #html5-qrcode-button-camera-stop{background:var(--cream)!important;color:var(--ink)!important;border:1px solid var(--border)!important;}
+  #html5-qrcode-button-file-selection{display:none!important;}
+  .scanner-status{text-align:center;font-family:'DM Mono',monospace;font-size:12px;color:rgba(26,26,24,.5);letter-spacing:.06em;margin-bottom:14px;min-height:18px;}
+  .scanner-status.found{color:var(--green);font-weight:500;}
+  .scanner-status.error{color:var(--red);}
+  .book-preview{display:none;align-items:center;gap:16px;padding:16px;background:white;border:1px solid var(--border);border-radius:6px;margin-bottom:16px;box-shadow:0 1px 4px var(--shadow);}
+  .book-preview.active{display:flex;}
+  .preview-cover{width:56px;height:78px;border-radius:3px;border:1px solid var(--border);flex-shrink:0;overflow:hidden;background:var(--cream);display:flex;align-items:center;justify-content:center;font-size:24px;}
+  .preview-cover img{width:100%;height:100%;object-fit:cover;}
+  .preview-info{flex:1;min-width:0;}
+  .preview-title{font-size:14px;font-weight:600;line-height:1.4;margin-bottom:4px;}
+  .preview-author{font-family:'DM Mono',monospace;font-size:11px;color:rgba(26,26,24,.5);margin-bottom:4px;}
+  .preview-isbn{font-family:'DM Mono',monospace;font-size:10px;color:rgba(26,26,24,.3);letter-spacing:.04em;}
+  .lookup-state{display:none;align-items:center;gap:10px;padding:12px 16px;background:white;border:1px solid var(--border);border-radius:4px;margin-bottom:16px;font-family:'DM Mono',monospace;font-size:12px;color:rgba(26,26,24,.5);letter-spacing:.06em;}
+  .lookup-state.active{display:flex;}
+  .spinner{width:16px;height:16px;border:2px solid var(--border);border-top-color:var(--blue);border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+  .divider-text{display:flex;align-items:center;gap:10px;margin:12px 0 10px;font-family:'DM Mono',monospace;font-size:10px;color:rgba(26,26,24,.3);letter-spacing:.1em;}
+  .divider-text::before,.divider-text::after{content:'';flex:1;border-top:1px solid var(--border);}
+  .manual-input-area{display:flex;flex-direction:column;gap:10px;margin-bottom:16px;}
+  .field-group{display:flex;flex-direction:column;gap:5px;}
+  .field-label{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:rgba(26,26,24,.4);}
+  .field-input{width:100%;padding:10px 14px;border:1px solid var(--border);border-radius:3px;font-family:'Noto Serif JP',serif;font-size:14px;background:white;color:var(--ink);outline:none;transition:border-color .15s;}
+  .field-input:focus{border-color:var(--blue);}
+  .mgmt-section{margin-bottom:32px;}
+  .mgmt-section-title{font-size:15px;font-weight:600;margin-bottom:14px;display:flex;align-items:center;gap:8px;}
+  .owner-row{display:flex;align-items:center;gap:12px;padding:14px 16px;background:white;border:1px solid var(--border);border-radius:4px;margin-bottom:8px;box-shadow:0 1px 3px var(--shadow);}
+  .owner-row-emoji{font-size:20px;}
+  .owner-row-name{flex:1;font-size:15px;font-weight:600;}
+  .owner-row-count{font-family:'DM Mono',monospace;font-size:11px;color:rgba(26,26,24,.4);margin-right:4px;}
+  .owner-row-del{padding:5px 12px;border:1px solid rgba(139,58,58,.25);border-radius:3px;background:none;color:var(--red);font-family:'DM Mono',monospace;font-size:11px;cursor:pointer;transition:all .15s;}
+  .owner-row-del:hover{background:rgba(139,58,58,.08);}
+  .owner-row-del:disabled{opacity:.3;cursor:not-allowed;}
+  .add-owner-form{display:flex;gap:10px;margin-top:14px;}
+  .add-owner-input{flex:1;padding:10px 14px;border:1px solid var(--border);border-radius:3px;font-family:'Noto Serif JP',serif;font-size:14px;background:white;color:var(--ink);outline:none;transition:border-color .15s;}
+  .add-owner-input:focus{border-color:var(--blue);}
+  .add-owner-btn{padding:10px 18px;border:none;border-radius:3px;background:var(--blue);color:white;font-family:'Noto Serif JP',serif;font-size:14px;font-weight:600;cursor:pointer;transition:background .15s;white-space:nowrap;}
+  .add-owner-btn:hover{background:#2e5a73;}
+  .confirm-overlay{position:fixed;inset:0;background:rgba(26,26,24,.6);backdrop-filter:blur(2px);z-index:400;display:flex;align-items:center;justify-content:center;padding:24px;}
+  .confirm-overlay.hidden{display:none!important;}
+  .confirm-box{background:var(--paper);border-radius:8px;padding:28px 24px;max-width:360px;width:100%;box-shadow:0 8px 32px rgba(26,26,24,.2);animation:fadeIn .18s ease;}
+  .confirm-title{font-size:16px;font-weight:600;margin-bottom:10px;}
+  .confirm-body{font-size:14px;color:rgba(26,26,24,.65);line-height:1.7;margin-bottom:24px;}
+  .confirm-btns{display:flex;gap:10px;}
 </style>
 </head>
 <body>
@@ -192,16 +186,12 @@
   <div class="modal-sheet">
     <div class="modal-handle"></div>
     <div class="modal-title">本を登録</div>
-    <div class="modal-sub" id="register-modal-sub">バーコード（ISBN）をカメラに向けてください</div>
-    <div class="scanner-wrap">
-      <video id="scanner-video" autoplay muted playsinline></video>
-      <div class="scanner-frame"></div>
-      <div class="scan-line" id="scan-line"></div>
-    </div>
-    <div class="scanner-status" id="scanner-status">スキャン待機中…</div>
+    <div class="modal-sub">バーコード（ISBN）をカメラに向けてください</div>
+    <div id="qr-reader"></div>
+    <div class="scanner-status" id="scanner-status"></div>
     <div class="lookup-state" id="lookup-state">
       <div class="spinner"></div>
-      <span id="lookup-msg">書誌情報を取得中…</span>
+      <span>書誌情報を取得中…</span>
     </div>
     <div class="book-preview" id="book-preview">
       <div class="preview-cover" id="preview-cover">📖</div>
@@ -212,7 +202,7 @@
       </div>
     </div>
     <div class="divider-text">または手動入力</div>
-    <div class="manual-input-area active" id="manual-input-area">
+    <div class="manual-input-area">
       <div class="field-group">
         <div class="field-label">タイトル</div>
         <input class="field-input" id="manual-title" type="text" placeholder="書名を入力…">
@@ -241,341 +231,243 @@
 </div>
 
 <script>
-const EMOJI_POOL = ["📗","📘","📙","📕","📓","📒","📔","📚"];
-const defaultOwners = [
-  { name:"山田", emoji:"📗" },
-  { name:"佐藤", emoji:"📘" },
-  { name:"鈴木", emoji:"📙" }
+const EMOJI_POOL=["📗","📘","📙","📕","📓","📒","📔","📚"];
+const defaultOwners=[{name:"山田",emoji:"📗"},{name:"佐藤",emoji:"📘"},{name:"鈴木",emoji:"📙"}];
+const defaultBooks=[
+  {id:1,owner:"山田",title:"AI入門",author:"",isbn:"",coverImage:null,emoji:"🤖",status:"available",borrower:""},
+  {id:2,owner:"山田",title:"経済の基本",author:"",isbn:"",coverImage:null,emoji:"📊",status:"available",borrower:""},
+  {id:3,owner:"佐藤",title:"環境政策の未来",author:"",isbn:"",coverImage:null,emoji:"🌿",status:"available",borrower:""},
+  {id:4,owner:"鈴木",title:"都市計画概論",author:"",isbn:"",coverImage:null,emoji:"🏙️",status:"available",borrower:""}
 ];
-const defaultBooks = [
-  { id:1, owner:"山田", title:"AI入門",        author:"", isbn:"", coverImage:null, emoji:"🤖", status:"available", borrower:"" },
-  { id:2, owner:"山田", title:"経済の基本",     author:"", isbn:"", coverImage:null, emoji:"📊", status:"available", borrower:"" },
-  { id:3, owner:"佐藤", title:"環境政策の未来", author:"", isbn:"", coverImage:null, emoji:"🌿", status:"available", borrower:"" },
-  { id:4, owner:"鈴木", title:"都市計画概論",   author:"", isbn:"", coverImage:null, emoji:"🏙️", status:"available", borrower:"" }
-];
-let owners = JSON.parse(localStorage.getItem("lending_owners") || "null") || defaultOwners;
-let books  = JSON.parse(localStorage.getItem("lending_books")  || "null") || defaultBooks;
-function saveOwners() { localStorage.setItem("lending_owners", JSON.stringify(owners)); }
-function saveBooks()  { localStorage.setItem("lending_books",  JSON.stringify(books)); }
-let currentOwner = "", currentBookId = null;
+let owners=JSON.parse(localStorage.getItem("lending_owners")||"null")||defaultOwners;
+let books=JSON.parse(localStorage.getItem("lending_books")||"null")||defaultBooks;
+function saveOwners(){localStorage.setItem("lending_owners",JSON.stringify(owners));}
+function saveBooks(){localStorage.setItem("lending_books",JSON.stringify(books));}
+let currentOwner="",currentBookId=null;
 
-function updateBreadcrumb(parts) {
-  const el = document.getElementById("breadcrumb");
-  if (!parts || !parts.length) { el.innerHTML = ""; return; }
-  el.innerHTML = parts.map((p,i) =>
-    i === parts.length-1
-      ? `<span class="current">${p.label}</span>`
-      : `<span onclick="${p.action}">${p.label}</span><span class="sep">›</span>`
-  ).join("");
+function updateBreadcrumb(parts){
+  const el=document.getElementById("breadcrumb");
+  if(!parts||!parts.length){el.innerHTML="";return;}
+  el.innerHTML=parts.map((p,i)=>i===parts.length-1?`<span class="current">${p.label}</span>`:`<span onclick="${p.action}">${p.label}</span><span class="sep">›</span>`).join("");
 }
 let toastTimer;
-function showToast(msg) {
-  const t = document.getElementById("toast");
-  t.textContent = msg; t.classList.add("show");
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => t.classList.remove("show"), 2400);
+function showToast(msg){
+  const t=document.getElementById("toast");
+  t.textContent=msg;t.classList.add("show");
+  clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove("show"),2400);
 }
-function showScreen(id) {
-  ["screen-owners","screen-books","screen-detail","screen-mgmt"].forEach(s => {
-    const el = document.getElementById(s);
-    el.classList.add("hidden"); el.classList.remove("screen");
+function showScreen(id){
+  ["screen-owners","screen-books","screen-detail","screen-mgmt"].forEach(s=>{
+    const el=document.getElementById(s);el.classList.add("hidden");el.classList.remove("screen");
   });
-  const t = document.getElementById(id);
-  t.classList.remove("hidden"); void t.offsetWidth; t.classList.add("screen");
+  const t=document.getElementById(id);t.classList.remove("hidden");void t.offsetWidth;t.classList.add("screen");
 }
-function thumbHtml(b) {
-  if (b.coverImage) return `<div class="book-thumb"><img src="${b.coverImage}" alt="${b.title}"></div>`;
-  return `<div class="book-thumb"><span>${b.emoji||"📖"}</span></div>`;
+function thumbHtml(b){
+  if(b.coverImage)return`<div class="book-thumb"><img src="${b.coverImage}" alt="${b.title}"></div>`;
+  return`<div class="book-thumb"><span>${b.emoji||"📖"}</span></div>`;
 }
-
-function renderOwners() {
-  const list = document.getElementById("owner-list");
-  list.innerHTML = "";
-  if (!owners.length) {
-    list.innerHTML = '<div class="empty-state">所有者がいません<br>⚙ 管理から追加してください</div>';
-    updateBreadcrumb([]); return;
-  }
-  owners.forEach(o => {
-    const owned   = books.filter(b => b.owner === o.name);
-    const borrow  = owned.filter(b => b.status === "borrowed").length;
-    const div = document.createElement("div");
-    div.className = "owner-card";
-    div.innerHTML = `
-      <div style="display:flex;align-items:center;gap:12px">
-        <span style="font-size:22px">${o.emoji}</span>
-        <span class="owner-name">${o.name}</span>
-      </div>
-      <div style="display:flex;align-items:center;gap:8px">
-        <span class="owner-count">${owned.length}冊${borrow>0?` · 貸出中${borrow}`:''}</span>
-        <span class="owner-arrow">›</span>
-      </div>`;
-    div.onclick = () => selectOwner(o.name);
-    list.appendChild(div);
+function renderOwners(){
+  const list=document.getElementById("owner-list");list.innerHTML="";
+  if(!owners.length){list.innerHTML='<div class="empty-state">所有者がいません<br>⚙ 管理から追加してください</div>';updateBreadcrumb([]);return;}
+  owners.forEach(o=>{
+    const owned=books.filter(b=>b.owner===o.name);
+    const borrow=owned.filter(b=>b.status==="borrowed").length;
+    const div=document.createElement("div");div.className="owner-card";
+    div.innerHTML=`<div style="display:flex;align-items:center;gap:12px"><span style="font-size:22px">${o.emoji}</span><span class="owner-name">${o.name}</span></div><div style="display:flex;align-items:center;gap:8px"><span class="owner-count">${owned.length}冊${borrow>0?` · 貸出中${borrow}`:""}</span><span class="owner-arrow">›</span></div>`;
+    div.onclick=()=>selectOwner(o.name);list.appendChild(div);
   });
   updateBreadcrumb([]);
 }
-function selectOwner(name) {
-  currentOwner = name;
-  showScreen("screen-books");
-  document.getElementById("books-label").textContent = name + " の蔵書";
+function selectOwner(name){
+  currentOwner=name;showScreen("screen-books");
+  document.getElementById("books-label").textContent=name+" の蔵書";
   renderBooks();
-  updateBreadcrumb([{ label:"持ち主一覧", action:"backToOwners()" }, { label:name }]);
+  updateBreadcrumb([{label:"持ち主一覧",action:"backToOwners()"},{label:name}]);
 }
-function renderBooks() {
-  const list = document.getElementById("book-list");
-  list.innerHTML = "";
-  const my = books.filter(b => b.owner === currentOwner);
-  if (!my.length) { list.innerHTML = '<div class="empty-state">蔵書がありません</div>'; return; }
-  my.forEach(b => {
-    const div = document.createElement("div");
-    div.className = "book-card";
-    div.innerHTML = `
-      ${thumbHtml(b)}
-      <div class="book-info">
-        <div class="book-title">${b.title}</div>
-        <div class="book-author">${b.author||''}</div>
-        <div class="book-meta">${b.status==='borrowed'?'→ '+b.borrower:'—'}</div>
-      </div>
-      <span class="badge ${b.status==='available'?'available':'borrowed'}">
-        ${b.status==='available'?'貸出可':'貸出中'}
-      </span>`;
-    div.onclick = () => selectBook(b.id);
-    list.appendChild(div);
+function renderBooks(){
+  const list=document.getElementById("book-list");list.innerHTML="";
+  const my=books.filter(b=>b.owner===currentOwner);
+  if(!my.length){list.innerHTML='<div class="empty-state">蔵書がありません</div>';return;}
+  my.forEach(b=>{
+    const div=document.createElement("div");div.className="book-card";
+    div.innerHTML=`${thumbHtml(b)}<div class="book-info"><div class="book-title">${b.title}</div><div class="book-author">${b.author||""}</div><div class="book-meta">${b.status==="borrowed"?"→ "+b.borrower:"—"}</div></div><span class="badge ${b.status==="available"?"available":"borrowed"}">${b.status==="available"?"貸出可":"貸出中"}</span>`;
+    div.onclick=()=>selectBook(b.id);list.appendChild(div);
   });
 }
-function selectBook(id) {
-  currentBookId = id;
-  showScreen("screen-detail");
-  const b = books.find(x => x.id===id);
-  updateBreadcrumb([
-    { label:"持ち主一覧", action:"backToOwners()" },
-    { label:currentOwner, action:"backToBooks()" },
-    { label:b.title }
-  ]);
+function selectBook(id){
+  currentBookId=id;showScreen("screen-detail");
+  const b=books.find(x=>x.id===id);
+  updateBreadcrumb([{label:"持ち主一覧",action:"backToOwners()"},{label:currentOwner,action:"backToBooks()"},{label:b.title}]);
   renderDetail();
 }
-function renderDetail() {
-  const b = books.find(x => x.id===currentBookId);
-  const card = document.getElementById("detail-card");
-  const ok = b.status==="available";
-  const cover = b.coverImage ? `<img src="${b.coverImage}" alt="${b.title}">` : `<span>${b.emoji||"📖"}</span>`;
-  card.innerHTML = `
-    <div class="detail-cover-wrap"><div class="detail-cover">${cover}</div></div>
-    <div class="detail-title">${b.title}</div>
-    ${b.author?`<div class="detail-author">${b.author}</div>`:''}
-    <div class="detail-owner">所有者：${b.owner}</div>
-    <hr class="detail-divider">
-    <div class="detail-row">
-      <span class="detail-label">状態</span>
-      <span class="badge ${ok?'available':'borrowed'}">${ok?'貸出可':'貸出中'}</span>
-    </div>
-    ${!ok?`<div class="detail-row"><span class="detail-label">借りている人</span><span class="detail-value">${b.borrower}</span></div>`:''}
-    ${b.isbn?`<div class="detail-row"><span class="detail-label">ISBN</span><span style="font-family:'DM Mono',monospace;font-size:12px">${b.isbn}</span></div>`:''}
-    <div class="input-wrap ${ok?'visible':''}" id="borrower-input-wrap">
-      <div class="input-label">借りる人の名前</div>
-      <input class="input-field" id="borrower-name" type="text" placeholder="名前を入力…" maxlength="20">
-    </div>
-    <div class="btn-group">
-      <button class="btn btn-primary"   onclick="borrowBook()" ${!ok?'disabled':''}>借りる</button>
-      <button class="btn btn-secondary" onclick="returnBook()" ${ ok?'disabled':''}>返却する</button>
-    </div>
-    <div class="btn-group" style="margin-top:10px">
-      <button class="btn btn-danger" style="font-size:13px;padding:10px 0" onclick="deleteBook(${b.id})">この本を削除</button>
-    </div>`;
+function renderDetail(){
+  const b=books.find(x=>x.id===currentBookId);
+  const card=document.getElementById("detail-card");const ok=b.status==="available";
+  const cover=b.coverImage?`<img src="${b.coverImage}" alt="${b.title}">`:`<span>${b.emoji||"📖"}</span>`;
+  card.innerHTML=`<div class="detail-cover-wrap"><div class="detail-cover">${cover}</div></div><div class="detail-title">${b.title}</div>${b.author?`<div class="detail-author">${b.author}</div>`:""}<div class="detail-owner">所有者：${b.owner}</div><hr class="detail-divider"><div class="detail-row"><span class="detail-label">状態</span><span class="badge ${ok?"available":"borrowed"}">${ok?"貸出可":"貸出中"}</span></div>${!ok?`<div class="detail-row"><span class="detail-label">借りている人</span><span class="detail-value">${b.borrower}</span></div>`:""} ${b.isbn?`<div class="detail-row"><span class="detail-label">ISBN</span><span style="font-family:'DM Mono',monospace;font-size:12px">${b.isbn}</span></div>`:""}<div class="input-wrap ${ok?"visible":""}" id="borrower-input-wrap"><div class="input-label">借りる人の名前</div><input class="input-field" id="borrower-name" type="text" placeholder="名前を入力…" maxlength="20"></div><div class="btn-group"><button class="btn btn-primary" onclick="borrowBook()" ${!ok?"disabled":""}>借りる</button><button class="btn btn-secondary" onclick="returnBook()" ${ok?"disabled":""}>返却する</button></div><div class="btn-group" style="margin-top:10px"><button class="btn btn-danger" style="font-size:13px;padding:10px 0" onclick="deleteBook(${b.id})">この本を削除</button></div>`;
 }
-function borrowBook() {
-  const input = document.getElementById("borrower-name");
-  const name = input?.value.trim()||"";
-  if (!name) { input.focus(); input.style.borderColor="var(--red)"; setTimeout(()=>input.style.borderColor="",1200); return; }
-  const b = books.find(x=>x.id===currentBookId);
-  b.status="borrowed"; b.borrower=name;
-  saveBooks(); showToast(`「${b.title}」を ${name} に貸出しました`);
-  renderDetail(); renderBooks();
+function borrowBook(){
+  const input=document.getElementById("borrower-name");const name=input?.value.trim()||"";
+  if(!name){input.focus();input.style.borderColor="var(--red)";setTimeout(()=>input.style.borderColor="",1200);return;}
+  const b=books.find(x=>x.id===currentBookId);b.status="borrowed";b.borrower=name;
+  saveBooks();showToast(`「${b.title}」を ${name} に貸出しました`);renderDetail();renderBooks();
 }
-function returnBook() {
-  const b = books.find(x=>x.id===currentBookId);
-  b.status="available"; b.borrower="";
-  saveBooks(); showToast(`「${b.title}」が返却されました`);
-  renderDetail(); renderBooks();
+function returnBook(){
+  const b=books.find(x=>x.id===currentBookId);b.status="available";b.borrower="";
+  saveBooks();showToast(`「${b.title}」が返却されました`);renderDetail();renderBooks();
 }
-function deleteBook(id) {
-  const b = books.find(x=>x.id===id);
-  openConfirm(`「${b.title}」を削除`,`この本の登録をすべて削除します。`,() => {
-    books = books.filter(x=>x.id!==id);
-    saveBooks(); showToast(`「${b.title}」を削除しました`); backToBooks();
+function deleteBook(id){
+  const b=books.find(x=>x.id===id);
+  openConfirm(`「${b.title}」を削除`,`この本の登録をすべて削除します。`,()=>{
+    books=books.filter(x=>x.id!==id);saveBooks();showToast(`「${b.title}」を削除しました`);backToBooks();
   });
 }
-function openMgmt() {
+function openMgmt(){
   showScreen("screen-mgmt");
-  updateBreadcrumb([{ label:"持ち主一覧", action:"backToOwners()" }, { label:"管理" }]);
+  updateBreadcrumb([{label:"持ち主一覧",action:"backToOwners()"},{label:"管理"}]);
   renderMgmt();
 }
-function renderMgmt() {
-  const list = document.getElementById("mgmt-owner-list");
-  list.innerHTML = "";
-  if (!owners.length) { list.innerHTML='<div class="empty-state" style="padding:24px 0">所有者がいません</div>'; return; }
-  owners.forEach(o => {
-    const owned  = books.filter(b=>b.owner===o.name).length;
-    const borrow = books.filter(b=>b.owner===o.name&&b.status==="borrowed").length;
-    const div = document.createElement("div");
-    div.className = "owner-row";
-    div.innerHTML = `
-      <span class="owner-row-emoji">${o.emoji}</span>
-      <span class="owner-row-name">${o.name}</span>
-      <span class="owner-row-count">${owned}冊${borrow?` · 貸出中${borrow}`:''}</span>
-      <button class="owner-row-del" onclick="confirmDeleteOwner('${o.name}')"
-        ${borrow>0?'disabled title="貸出中の本があるため削除できません"':''}>削除</button>`;
+function renderMgmt(){
+  const list=document.getElementById("mgmt-owner-list");list.innerHTML="";
+  if(!owners.length){list.innerHTML='<div class="empty-state" style="padding:24px 0">所有者がいません</div>';return;}
+  owners.forEach(o=>{
+    const owned=books.filter(b=>b.owner===o.name).length;
+    const borrow=books.filter(b=>b.owner===o.name&&b.status==="borrowed").length;
+    const div=document.createElement("div");div.className="owner-row";
+    div.innerHTML=`<span class="owner-row-emoji">${o.emoji}</span><span class="owner-row-name">${o.name}</span><span class="owner-row-count">${owned}冊${borrow?` · 貸出中${borrow}`:""}</span><button class="owner-row-del" onclick="confirmDeleteOwner('${o.name}')" ${borrow>0?'disabled title="貸出中の本があるため削除できません"':""}>削除</button>`;
     list.appendChild(div);
   });
 }
-function addOwner() {
-  const input = document.getElementById("new-owner-input");
-  const name = input.value.trim();
-  if (!name) { input.focus(); return; }
-  if (owners.find(o=>o.name===name)) { showToast("同名の所有者がすでにいます"); return; }
-  owners.push({ name, emoji: EMOJI_POOL[owners.length%EMOJI_POOL.length] });
-  saveOwners(); input.value=""; renderMgmt(); renderOwners();
-  showToast(`「${name}」を追加しました`);
+function addOwner(){
+  const input=document.getElementById("new-owner-input");const name=input.value.trim();
+  if(!name){input.focus();return;}
+  if(owners.find(o=>o.name===name)){showToast("同名の所有者がすでにいます");return;}
+  owners.push({name,emoji:EMOJI_POOL[owners.length%EMOJI_POOL.length]});
+  saveOwners();input.value="";renderMgmt();renderOwners();showToast(`「${name}」を追加しました`);
 }
-function confirmDeleteOwner(name) {
-  const owned = books.filter(b=>b.owner===name).length;
-  openConfirm(`「${name}」を削除`,`この所有者と登録されている ${owned} 冊の本をすべて削除します。この操作は取り消せません。`,() => {
-    owners = owners.filter(o=>o.name!==name);
-    books  = books.filter(b=>b.owner!==name);
-    saveOwners(); saveBooks(); renderMgmt(); showToast(`「${name}」を削除しました`);
+function confirmDeleteOwner(name){
+  const owned=books.filter(b=>b.owner===name).length;
+  openConfirm(`「${name}」を削除`,`この所有者と登録されている ${owned} 冊の本をすべて削除します。この操作は取り消せません。`,()=>{
+    owners=owners.filter(o=>o.name!==name);books=books.filter(b=>b.owner!==name);
+    saveOwners();saveBooks();renderMgmt();showToast(`「${name}」を削除しました`);
   });
 }
-let _confirmCb = null;
-function openConfirm(title, body, onOk) {
-  document.getElementById("confirm-title").textContent = title;
-  document.getElementById("confirm-body").textContent  = body;
-  _confirmCb = onOk;
-  document.getElementById("confirm-overlay").classList.remove("hidden");
+let _cb=null;
+function openConfirm(title,body,onOk){
+  document.getElementById("confirm-title").textContent=title;
+  document.getElementById("confirm-body").textContent=body;
+  _cb=onOk;document.getElementById("confirm-overlay").classList.remove("hidden");
 }
-function closeConfirm() {
-  document.getElementById("confirm-overlay").classList.add("hidden");
-  _confirmCb = null;
-}
-document.getElementById("confirm-ok-btn").onclick = () => { if (_confirmCb) _confirmCb(); closeConfirm(); };
-function backToOwners() { showScreen("screen-owners"); renderOwners(); }
-function backToBooks() {
-  showScreen("screen-books"); renderBooks();
-  updateBreadcrumb([{ label:"持ち主一覧", action:"backToOwners()" }, { label:currentOwner }]);
+function closeConfirm(){document.getElementById("confirm-overlay").classList.add("hidden");_cb=null;}
+document.getElementById("confirm-ok-btn").onclick=()=>{if(_cb)_cb();closeConfirm();};
+function backToOwners(){showScreen("screen-owners");renderOwners();}
+function backToBooks(){
+  showScreen("screen-books");renderBooks();
+  updateBreadcrumb([{label:"持ち主一覧",action:"backToOwners()"},{label:currentOwner}]);
 }
 
-let codeReader = null, scannedIsbn = null, pendingBook = null;
+let html5QrCode=null,scannedIsbn=null,pendingBook=null;
 
-function resetModalUI() {
-  scannedIsbn = null; pendingBook = null;
-  document.getElementById("scanner-status").textContent = "スキャン待機中…";
-  document.getElementById("scanner-status").className  = "scanner-status";
+function resetModal(){
+  scannedIsbn=null;pendingBook=null;
+  document.getElementById("scanner-status").textContent="";
+  document.getElementById("scanner-status").className="scanner-status";
   document.getElementById("lookup-state").classList.remove("active");
   document.getElementById("book-preview").classList.remove("active");
-  document.getElementById("manual-input-area").classList.add("active");
-  document.getElementById("manual-title").value  = "";
-  document.getElementById("manual-author").value = "";
-  document.getElementById("register-confirm-btn").disabled = true;
-  document.getElementById("manual-title").oninput = syncConfirmBtn;
+  document.getElementById("manual-title").value="";
+  document.getElementById("manual-author").value="";
+  document.getElementById("register-confirm-btn").disabled=true;
+  document.getElementById("manual-title").oninput=syncBtn;
 }
-function syncConfirmBtn() {
-  const hasPreview = pendingBook !== null;
-  const hasManual  = document.getElementById("manual-title").value.trim().length > 0;
-  document.getElementById("register-confirm-btn").disabled = !(hasPreview || hasManual);
+function syncBtn(){
+  document.getElementById("register-confirm-btn").disabled=!(pendingBook||document.getElementById("manual-title").value.trim());
 }
-async function openRegisterModal() {
-  resetModalUI();
+async function openRegisterModal(){
+  resetModal();
   document.getElementById("register-modal").classList.remove("hidden");
-  await startScanner();
+  html5QrCode=new Html5Qrcode("qr-reader");
+  const config={
+    fps:10,
+    qrbox:{width:250,height:100},
+    formatsToSupport:[Html5QrcodeSupportedFormats.EAN_13,Html5QrcodeSupportedFormats.EAN_8,Html5QrcodeSupportedFormats.CODE_128]
+  };
+  try{
+    await html5QrCode.start({facingMode:"environment"},config,onScanSuccess,()=>{});
+  }catch(e){
+    setStatus(`カメラを起動できませんでした：${e.message||e}`,"error");
+  }
 }
-function closeRegisterModal() {
+function closeRegisterModal(){
   stopScanner();
   document.getElementById("register-modal").classList.add("hidden");
 }
-async function startScanner() {
-  try {
-    if (typeof ZXing === "undefined") throw new Error("スキャナーライブラリを読み込めませんでした");
-    codeReader = new ZXing.BrowserMultiFormatReader();
-    const videoEl = document.getElementById("scanner-video");
-    const devices = await ZXing.BrowserCodeReader.listVideoInputDevices();
-    const backCam = devices.find(d=>/back|rear|environment/i.test(d.label)) || devices[devices.length-1];
-    await codeReader.decodeFromVideoDevice(backCam?.deviceId||undefined, videoEl, (result, err) => {
-      if (result) {
-        const text = result.getText();
-        if (/^(978|979)\d{10}$/.test(text) || /^\d{9}[\dX]$/.test(text)) {
-          if (text !== scannedIsbn) { scannedIsbn = text; onIsbnDetected(text); }
-        }
-      }
-    });
-  } catch(e) {
-    setStatus(`カメラを起動できませんでした：${e.message}`, "error");
-  }
+function stopScanner(){
+  if(html5QrCode){html5QrCode.stop().catch(()=>{});html5QrCode.clear();html5QrCode=null;}
+  scannedIsbn=null;
 }
-function stopScanner() {
-  try { codeReader?.reset(); } catch(_) {}
-  codeReader = null; scannedIsbn = null;
+function onScanSuccess(text){
+  if(!/^(978|979)\d{10}$/.test(text)&&!/^\d{9}[\dX]$/.test(text))return;
+  if(text===scannedIsbn)return;
+  scannedIsbn=text;
+  html5QrCode.pause();
+  fetchBookInfo(text);
 }
-function setStatus(msg, cls="") {
-  const el = document.getElementById("scanner-status");
-  el.textContent = msg;
-  el.className   = "scanner-status" + (cls?" "+cls:"");
+function setStatus(msg,cls=""){
+  const el=document.getElementById("scanner-status");
+  el.textContent=msg;el.className="scanner-status"+(cls?" "+cls:"");
 }
-async function onIsbnDetected(isbn) {
-  setStatus(`ISBN ${isbn} を検出 ─ 書誌情報を取得中…`, "found");
+async function fetchBookInfo(isbn){
+  setStatus(`ISBN ${isbn} を検出 — 書誌情報を取得中…`,"found");
   document.getElementById("lookup-state").classList.add("active");
-  document.getElementById("scan-line").style.animationPlayState = "paused";
-  try {
-    const url = `https://iss.ndl.go.jp/api/sru?operation=searchRetrieve&query=isbn%3D${isbn}&recordSchema=dcndl&maximumRecords=1`;
-    const res = await fetch(url);
-    if (!res.ok) throw new Error(`API error ${res.status}`);
-    const xml  = await res.text();
-    const doc  = new DOMParser().parseFromString(xml, "application/xml");
-    const title  = doc.querySelector("title")?.textContent?.trim()  || "";
-    const author = doc.querySelector("creator")?.textContent?.trim() || "";
-    let coverImage = null;
-    try {
-      const ob = await fetch(`https://api.openbd.jp/v1/get?isbn=${isbn}`);
-      const od = await ob.json();
-      const imgUrl = od?.[0]?.summary?.cover;
-      if (imgUrl) coverImage = imgUrl;
-    } catch(_) {}
+  try{
+    const url=`https://iss.ndl.go.jp/api/sru?operation=searchRetrieve&query=isbn%3D${isbn}&recordSchema=dcndl&maximumRecords=1`;
+    const res=await fetch(url);
+    if(!res.ok)throw new Error(`NDL API error ${res.status}`);
+    const xml=await res.text();
+    const doc=new DOMParser().parseFromString(xml,"application/xml");
+    const title=doc.querySelector("title")?.textContent?.trim()||"";
+    const author=doc.querySelector("creator")?.textContent?.trim()||"";
+    let coverImage=null;
+    try{
+      const ob=await fetch(`https://api.openbd.jp/v1/get?isbn=${isbn}`);
+      const od=await ob.json();
+      if(od?.[0]?.summary?.cover)coverImage=od[0].summary.cover;
+    }catch(_){}
     document.getElementById("lookup-state").classList.remove("active");
-    if (!title) throw new Error("書誌情報が見つかりませんでした");
-    pendingBook = { title, author, isbn, coverImage };
-    showBookPreview(pendingBook);
-    setStatus(`「${title}」を取得しました`, "found");
-    syncConfirmBtn();
-  } catch(e) {
+    if(!title)throw new Error("書誌情報が見つかりませんでした");
+    pendingBook={title,author,isbn,coverImage};
+    showPreview(pendingBook);
+    setStatus(`「${title}」を取得しました ✓`,"found");
+    syncBtn();
+  }catch(e){
     document.getElementById("lookup-state").classList.remove("active");
-    setStatus(`取得失敗 ─ 手動入力してください (${e.message})`, "error");
+    setStatus(`取得失敗 — 手動入力してください (${e.message})`,"error");
+    try{html5QrCode?.resume();scannedIsbn=null;}catch(_){}
     document.getElementById("manual-title").focus();
-    document.getElementById("scan-line").style.animationPlayState = "running";
   }
 }
-function showBookPreview(book) {
-  const cover = document.getElementById("preview-cover");
-  document.getElementById("preview-title").textContent  = book.title;
-  document.getElementById("preview-author").textContent = book.author||"";
-  document.getElementById("preview-isbn").textContent   = `ISBN ${book.isbn}`;
-  cover.innerHTML = book.coverImage ? `<img src="${book.coverImage}" alt="${book.title}">` : "📖";
+function showPreview(book){
+  const cover=document.getElementById("preview-cover");
+  cover.innerHTML=book.coverImage?`<img src="${book.coverImage}" alt="${book.title}">`:"📖";
+  document.getElementById("preview-title").textContent=book.title;
+  document.getElementById("preview-author").textContent=book.author||"";
+  document.getElementById("preview-isbn").textContent=`ISBN ${book.isbn}`;
   document.getElementById("book-preview").classList.add("active");
-  document.getElementById("manual-title").value  = book.title;
-  document.getElementById("manual-author").value = book.author||"";
+  document.getElementById("manual-title").value=book.title;
+  document.getElementById("manual-author").value=book.author||"";
 }
-function confirmRegister() {
-  const title  = document.getElementById("manual-title").value.trim()  || pendingBook?.title  || "";
-  const author = document.getElementById("manual-author").value.trim() || pendingBook?.author || "";
-  const isbn   = pendingBook?.isbn       || "";
-  const cover  = pendingBook?.coverImage || null;
-  if (!title) return;
-  books.push({ id:Date.now(), owner:currentOwner, title, author, isbn, coverImage:cover, emoji:"📖", status:"available", borrower:"" });
-  saveBooks(); closeRegisterModal(); renderBooks();
-  showToast(`「${title}」を登録しました`);
+function confirmRegister(){
+  const title=document.getElementById("manual-title").value.trim()||pendingBook?.title||"";
+  const author=document.getElementById("manual-author").value.trim()||pendingBook?.author||"";
+  const isbn=pendingBook?.isbn||"";
+  const cover=pendingBook?.coverImage||null;
+  if(!title)return;
+  books.push({id:Date.now(),owner:currentOwner,title,author,isbn,coverImage:cover,emoji:"📖",status:"available",borrower:""});
+  saveBooks();closeRegisterModal();renderBooks();showToast(`「${title}」を登録しました`);
 }
 
 renderOwners();
-document.getElementById("new-owner-input").addEventListener("keydown", e => {
-  if (e.key==="Enter") addOwner();
-});
+document.getElementById("new-owner-input").addEventListener("keydown",e=>{if(e.key==="Enter")addOwner();});
 </script>
 </body>
 </html>
