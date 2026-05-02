@@ -8,9 +8,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
 <style>
-  :root {
-    --ink:#1a1a18;--paper:#f5f2ec;--cream:#ece8df;--accent:#8b5e3c;--blue:#3c6e8b;--green:#3a6b4a;--red:#8b3a3a;--shadow:rgba(26,26,24,0.08);--border:rgba(26,26,24,0.12);
-  }
+  :root{--ink:#1a1a18;--paper:#f5f2ec;--cream:#ece8df;--accent:#8b5e3c;--blue:#3c6e8b;--green:#3a6b4a;--red:#8b3a3a;--shadow:rgba(26,26,24,0.08);--border:rgba(26,26,24,0.12);}
   *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
   body{font-family:'Noto Serif JP',serif;background:var(--paper);color:var(--ink);min-height:100vh;overflow-x:hidden;}
   body::before{content:'';position:fixed;inset:0;background-image:repeating-linear-gradient(0deg,transparent,transparent 28px,rgba(26,26,24,.025) 28px,rgba(26,26,24,.025) 29px);pointer-events:none;z-index:0;}
@@ -96,6 +94,9 @@
   #qr-reader__camera_permission_button,#html5-qrcode-button-camera-start,#html5-qrcode-button-camera-stop{padding:10px 0!important;width:100%!important;border:none!important;border-radius:3px!important;font-family:'Noto Serif JP',serif!important;font-size:14px!important;font-weight:600!important;cursor:pointer!important;background:var(--blue)!important;color:white!important;margin:4px 0!important;}
   #html5-qrcode-button-camera-stop{background:var(--cream)!important;color:var(--ink)!important;border:1px solid var(--border)!important;}
   #html5-qrcode-button-file-selection{display:none!important;}
+  .scanner-wrap{position:relative;}
+  .scanner-stopped{display:none;width:100%;aspect-ratio:4/3;background:#111;border-radius:8px;margin-bottom:12px;align-items:center;justify-content:center;flex-direction:column;gap:8px;color:rgba(255,255,255,.5);font-family:'DM Mono',monospace;font-size:12px;letter-spacing:.06em;}
+  .scanner-stopped.active{display:flex;}
   .scanner-status{text-align:center;font-family:'DM Mono',monospace;font-size:12px;color:rgba(26,26,24,.5);letter-spacing:.06em;margin-bottom:14px;min-height:18px;}
   .scanner-status.found{color:var(--green);font-weight:500;}
   .scanner-status.error{color:var(--red);}
@@ -118,6 +119,9 @@
   .field-label{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:rgba(26,26,24,.4);}
   .field-input{width:100%;padding:10px 14px;border:1px solid var(--border);border-radius:3px;font-family:'Noto Serif JP',serif;font-size:14px;background:white;color:var(--ink);outline:none;transition:border-color .15s;}
   .field-input:focus{border-color:var(--blue);}
+  .rescan-btn{display:none;width:100%;padding:11px 0;border:1.5px dashed var(--border);border-radius:4px;background:transparent;font-family:'DM Mono',monospace;font-size:12px;color:rgba(26,26,24,.4);letter-spacing:.1em;cursor:pointer;margin-bottom:14px;transition:all .18s;}
+  .rescan-btn.active{display:block;}
+  .rescan-btn:hover{border-color:var(--blue);color:var(--blue);}
   .mgmt-section{margin-bottom:32px;}
   .mgmt-section-title{font-size:15px;font-weight:600;margin-bottom:14px;display:flex;align-items:center;gap:8px;}
   .owner-row{display:flex;align-items:center;gap:12px;padding:14px 16px;background:white;border:1px solid var(--border);border-radius:4px;margin-bottom:8px;box-shadow:0 1px 3px var(--shadow);}
@@ -186,9 +190,16 @@
   <div class="modal-sheet">
     <div class="modal-handle"></div>
     <div class="modal-title">本を登録</div>
-    <div class="modal-sub">バーコード（ISBN）をカメラに向けてください</div>
-    <div id="qr-reader"></div>
+    <div class="modal-sub" id="modal-sub">バーコード（ISBN）をカメラに向けてください</div>
+    <div class="scanner-wrap">
+      <div id="qr-reader"></div>
+      <div class="scanner-stopped" id="scanner-stopped">
+        <span style="font-size:28px">✓</span>
+        <span id="scanner-stopped-msg">スキャン完了</span>
+      </div>
+    </div>
     <div class="scanner-status" id="scanner-status"></div>
+    <button class="rescan-btn" id="rescan-btn" onclick="restartScanner()">↺ 別の本をスキャン</button>
     <div class="lookup-state" id="lookup-state">
       <div class="spinner"></div>
       <span>書誌情報を取得中…</span>
@@ -366,83 +377,111 @@ function backToBooks(){
   updateBreadcrumb([{label:"持ち主一覧",action:"backToOwners()"},{label:currentOwner}]);
 }
 
+/* ════ スキャナー ════ */
 let html5QrCode=null,scannedIsbn=null,pendingBook=null;
 
 function resetModal(){
   scannedIsbn=null;pendingBook=null;
-  document.getElementById("scanner-status").textContent="";
-  document.getElementById("scanner-status").className="scanner-status";
+  setStatus("","");
   document.getElementById("lookup-state").classList.remove("active");
   document.getElementById("book-preview").classList.remove("active");
   document.getElementById("manual-title").value="";
   document.getElementById("manual-author").value="";
   document.getElementById("register-confirm-btn").disabled=true;
+  document.getElementById("rescan-btn").classList.remove("active");
+  document.getElementById("scanner-stopped").classList.remove("active");
+  document.getElementById("qr-reader").style.display="block";
+  document.getElementById("modal-sub").textContent="バーコード（ISBN）をカメラに向けてください";
   document.getElementById("manual-title").oninput=syncBtn;
 }
 function syncBtn(){
   document.getElementById("register-confirm-btn").disabled=!(pendingBook||document.getElementById("manual-title").value.trim());
 }
+function setStatus(msg,cls){
+  const el=document.getElementById("scanner-status");
+  el.textContent=msg;el.className="scanner-status"+(cls?" "+cls:"");
+}
+
 async function openRegisterModal(){
   resetModal();
   document.getElementById("register-modal").classList.remove("hidden");
-  html5QrCode=new Html5Qrcode("qr-reader");
-  const config={
-    fps:10,
-    qrbox:{width:250,height:100},
-    formatsToSupport:[Html5QrcodeSupportedFormats.EAN_13,Html5QrcodeSupportedFormats.EAN_8,Html5QrcodeSupportedFormats.CODE_128]
-  };
-  try{
-    await html5QrCode.start({facingMode:"environment"},config,onScanSuccess,()=>{});
-  }catch(e){
-    setStatus(`カメラを起動できませんでした：${e.message||e}`,"error");
-  }
+  await startScanner();
 }
 function closeRegisterModal(){
   stopScanner();
   document.getElementById("register-modal").classList.add("hidden");
 }
+async function startScanner(){
+  html5QrCode=new Html5Qrcode("qr-reader");
+  try{
+    await html5QrCode.start(
+      {facingMode:"environment"},
+      {fps:10,qrbox:{width:250,height:100},formatsToSupport:[Html5QrcodeSupportedFormats.EAN_13,Html5QrcodeSupportedFormats.EAN_8,Html5QrcodeSupportedFormats.CODE_128]},
+      onScanSuccess,
+      ()=>{}
+    );
+  }catch(e){
+    setStatus(`カメラを起動できませんでした：${e.message||e}`,"error");
+  }
+}
 function stopScanner(){
   if(html5QrCode){html5QrCode.stop().catch(()=>{});html5QrCode.clear();html5QrCode=null;}
   scannedIsbn=null;
+}
+async function restartScanner(){
+  // リセットしてスキャナーを再起動
+  pendingBook=null;scannedIsbn=null;
+  document.getElementById("book-preview").classList.remove("active");
+  document.getElementById("rescan-btn").classList.remove("active");
+  document.getElementById("scanner-stopped").classList.remove("active");
+  document.getElementById("qr-reader").style.display="block";
+  document.getElementById("register-confirm-btn").disabled=true;
+  document.getElementById("manual-title").value="";
+  document.getElementById("manual-author").value="";
+  setStatus("","");
+  document.getElementById("modal-sub").textContent="バーコード（ISBN）をカメラに向けてください";
+  await startScanner();
 }
 function onScanSuccess(text){
   if(!/^(978|979)\d{10}$/.test(text)&&!/^\d{9}[\dX]$/.test(text))return;
   if(text===scannedIsbn)return;
   scannedIsbn=text;
-  html5QrCode.pause();
-  fetchBookInfo(text);
+  // スキャナーを停止して映像を止める
+  html5QrCode.stop().then(()=>{
+    html5QrCode.clear();html5QrCode=null;
+    // カメラ映像エリアを停止済み表示に切り替え
+    document.getElementById("qr-reader").style.display="none";
+    document.getElementById("scanner-stopped").classList.add("active");
+    document.getElementById("scanner-stopped-msg").textContent=`ISBN: ${text}`;
+    fetchBookInfo(text);
+  }).catch(()=>{fetchBookInfo(text);});
 }
-function setStatus(msg,cls=""){
-  const el=document.getElementById("scanner-status");
-  el.textContent=msg;el.className="scanner-status"+(cls?" "+cls:"");
-}
+
 async function fetchBookInfo(isbn){
-  setStatus(`ISBN ${isbn} を検出 — 書誌情報を取得中…`,"found");
+  setStatus(`書誌情報を取得中…`,"found");
   document.getElementById("lookup-state").classList.add("active");
+  document.getElementById("modal-sub").textContent="書誌情報を取得中…";
   try{
-    const url=`https://iss.ndl.go.jp/api/sru?operation=searchRetrieve&query=isbn%3D${isbn}&recordSchema=dcndl&maximumRecords=1`;
-    const res=await fetch(url);
-    if(!res.ok)throw new Error(`NDL API error ${res.status}`);
-    const xml=await res.text();
-    const doc=new DOMParser().parseFromString(xml,"application/xml");
-    const title=doc.querySelector("title")?.textContent?.trim()||"";
-    const author=doc.querySelector("creator")?.textContent?.trim()||"";
-    let coverImage=null;
-    try{
-      const ob=await fetch(`https://api.openbd.jp/v1/get?isbn=${isbn}`);
-      const od=await ob.json();
-      if(od?.[0]?.summary?.cover)coverImage=od[0].summary.cover;
-    }catch(_){}
+    // OpenBD API（CORS対応・無料）
+    const ob=await fetch(`https://api.openbd.jp/v1/get?isbn=${isbn}`);
+    const od=await ob.json();
+    const summary=od?.[0]?.summary;
+    if(!summary?.title)throw new Error("書誌情報が見つかりませんでした");
+    const title=summary.title||"";
+    const author=summary.author||"";
+    const coverImage=summary.cover||null;
     document.getElementById("lookup-state").classList.remove("active");
-    if(!title)throw new Error("書誌情報が見つかりませんでした");
     pendingBook={title,author,isbn,coverImage};
     showPreview(pendingBook);
     setStatus(`「${title}」を取得しました ✓`,"found");
+    document.getElementById("modal-sub").textContent="内容を確認して登録してください";
+    document.getElementById("rescan-btn").classList.add("active");
     syncBtn();
   }catch(e){
     document.getElementById("lookup-state").classList.remove("active");
     setStatus(`取得失敗 — 手動入力してください (${e.message})`,"error");
-    try{html5QrCode?.resume();scannedIsbn=null;}catch(_){}
+    document.getElementById("modal-sub").textContent="手動でタイトルを入力してください";
+    document.getElementById("rescan-btn").classList.add("active");
     document.getElementById("manual-title").focus();
   }
 }
