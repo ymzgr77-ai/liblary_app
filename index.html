@@ -17,8 +17,12 @@
   .header-left{display:flex;align-items:baseline;gap:12px;}
   .header-title{font-size:26px;font-weight:600;letter-spacing:.05em;line-height:1;}
   .header-sub{font-family:'DM Mono',monospace;font-size:11px;color:var(--accent);letter-spacing:.12em;text-transform:uppercase;}
+  .header-right{display:flex;align-items:center;gap:8px;}
   .header-mgmt{padding:6px 12px;border:1px solid var(--border);border-radius:3px;font-family:'DM Mono',monospace;font-size:11px;letter-spacing:.08em;color:rgba(26,26,24,.5);cursor:pointer;background:white;transition:all .16s;}
   .header-mgmt:hover{border-color:var(--accent);color:var(--accent);}
+  .sync-btn{padding:6px 12px;border:1px solid var(--border);border-radius:3px;font-family:'DM Mono',monospace;font-size:11px;letter-spacing:.08em;color:rgba(26,26,24,.5);cursor:pointer;background:white;transition:all .16s;}
+  .sync-btn:hover{border-color:var(--blue);color:var(--blue);}
+  .sync-btn.syncing{color:var(--blue);border-color:var(--blue);}
   .breadcrumb{display:flex;align-items:center;gap:6px;font-family:'DM Mono',monospace;font-size:11px;color:rgba(26,26,24,.45);margin-bottom:20px;letter-spacing:.06em;min-height:18px;}
   .breadcrumb span{cursor:pointer;}
   .breadcrumb span:hover{color:var(--accent);}
@@ -77,6 +81,13 @@
   .screen{animation:fadeIn .22s ease;}
   @keyframes fadeIn{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
   .hidden{display:none!important;}
+  /* ローディング画面 */
+  .loading-screen{position:fixed;inset:0;background:var(--paper);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;z-index:500;}
+  .loading-screen.hidden{display:none!important;}
+  .loading-title{font-size:22px;font-weight:600;letter-spacing:.05em;}
+  .loading-sub{font-family:'DM Mono',monospace;font-size:11px;color:rgba(26,26,24,.4);letter-spacing:.1em;}
+  .loading-spinner{width:28px;height:28px;border:2px solid var(--border);border-top-color:var(--blue);border-radius:50%;animation:spin .8s linear infinite;}
+  @keyframes spin{to{transform:rotate(360deg);}}
   .modal-overlay{position:fixed;inset:0;background:rgba(26,26,24,.55);backdrop-filter:blur(2px);z-index:200;display:flex;align-items:flex-end;justify-content:center;animation:overlayIn .2s ease;}
   .modal-overlay.hidden{display:none!important;}
   @keyframes overlayIn{from{opacity:0;}to{opacity:1;}}
@@ -94,7 +105,6 @@
   #qr-reader__camera_permission_button,#html5-qrcode-button-camera-start,#html5-qrcode-button-camera-stop{padding:10px 0!important;width:100%!important;border:none!important;border-radius:3px!important;font-family:'Noto Serif JP',serif!important;font-size:14px!important;font-weight:600!important;cursor:pointer!important;background:var(--blue)!important;color:white!important;margin:4px 0!important;}
   #html5-qrcode-button-camera-stop{background:var(--cream)!important;color:var(--ink)!important;border:1px solid var(--border)!important;}
   #html5-qrcode-button-file-selection{display:none!important;}
-  .scanner-wrap{position:relative;}
   .scanner-stopped{display:none;width:100%;aspect-ratio:4/3;background:#111;border-radius:8px;margin-bottom:12px;align-items:center;justify-content:center;flex-direction:column;gap:8px;color:rgba(255,255,255,.5);font-family:'DM Mono',monospace;font-size:12px;letter-spacing:.06em;}
   .scanner-stopped.active{display:flex;}
   .scanner-status{text-align:center;font-family:'DM Mono',monospace;font-size:12px;color:rgba(26,26,24,.5);letter-spacing:.06em;margin-bottom:14px;min-height:18px;}
@@ -111,7 +121,6 @@
   .lookup-state{display:none;align-items:center;gap:10px;padding:12px 16px;background:white;border:1px solid var(--border);border-radius:4px;margin-bottom:16px;font-family:'DM Mono',monospace;font-size:12px;color:rgba(26,26,24,.5);letter-spacing:.06em;}
   .lookup-state.active{display:flex;}
   .spinner{width:16px;height:16px;border:2px solid var(--border);border-top-color:var(--blue);border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0;}
-  @keyframes spin{to{transform:rotate(360deg);}}
   .divider-text{display:flex;align-items:center;gap:10px;margin:12px 0 10px;font-family:'DM Mono',monospace;font-size:10px;color:rgba(26,26,24,.3);letter-spacing:.1em;}
   .divider-text::before,.divider-text::after{content:'';flex:1;border-top:1px solid var(--border);}
   .manual-input-area{display:flex;flex-direction:column;gap:10px;margin-bottom:16px;}
@@ -145,13 +154,24 @@
 </style>
 </head>
 <body>
+
+<!-- 起動時ローディング -->
+<div class="loading-screen" id="loading-screen">
+  <div class="loading-spinner"></div>
+  <div class="loading-title">図書貸出</div>
+  <div class="loading-sub">データを読み込み中…</div>
+</div>
+
 <div class="app-wrap">
   <header class="header">
     <div class="header-left">
       <div class="header-title">図書貸出</div>
       <div class="header-sub">Book Lending</div>
     </div>
-    <button class="header-mgmt" onclick="openMgmt()">⚙ 管理</button>
+    <div class="header-right">
+      <button class="sync-btn" id="sync-btn" onclick="syncAll()">↑↓ 同期</button>
+      <button class="header-mgmt" onclick="openMgmt()">⚙ 管理</button>
+    </div>
   </header>
   <div class="breadcrumb" id="breadcrumb"></div>
   <div id="screen-owners" class="screen">
@@ -191,7 +211,7 @@
     <div class="modal-handle"></div>
     <div class="modal-title">本を登録</div>
     <div class="modal-sub" id="modal-sub">バーコード（ISBN）をカメラに向けてください</div>
-    <div class="scanner-wrap">
+    <div>
       <div id="qr-reader"></div>
       <div class="scanner-stopped" id="scanner-stopped">
         <span style="font-size:28px">✓</span>
@@ -242,6 +262,22 @@
 </div>
 
 <script>
+/* ════ GAS API ════ */
+const GAS_URL="https://script.google.com/macros/s/AKfycbyamOSmlbHAaNafZk0JU33nww2U24a0a9R_wqc3zFGv1IK-WiDYmToDLvcZEGUFLB3JlQ/exec";
+
+async function gasGet(){
+  const res=await fetch(GAS_URL+"?action=getAll");
+  return res.json();
+}
+async function gasPost(body){
+  const res=await fetch(GAS_URL,{
+    method:"POST",
+    body:JSON.stringify(body)
+  });
+  return res.json();
+}
+
+/* ════ データ ════ */
 const EMOJI_POOL=["📗","📘","📙","📕","📓","📒","📔","📚"];
 const defaultOwners=[{name:"山田",emoji:"📗"},{name:"佐藤",emoji:"📘"},{name:"鈴木",emoji:"📙"}];
 const defaultBooks=[
@@ -250,12 +286,64 @@ const defaultBooks=[
   {id:3,owner:"佐藤",title:"環境政策の未来",author:"",isbn:"",coverImage:null,emoji:"🌿",status:"available",borrower:""},
   {id:4,owner:"鈴木",title:"都市計画概論",author:"",isbn:"",coverImage:null,emoji:"🏙️",status:"available",borrower:""}
 ];
-let owners=JSON.parse(localStorage.getItem("lending_owners")||"null")||defaultOwners;
-let books=JSON.parse(localStorage.getItem("lending_books")||"null")||defaultBooks;
-function saveOwners(){localStorage.setItem("lending_owners",JSON.stringify(owners));}
-function saveBooks(){localStorage.setItem("lending_books",JSON.stringify(books));}
+let owners=[];
+let books=[];
 let currentOwner="",currentBookId=null;
 
+/* ════ 起動時：スプレッドシートからデータ取得 ════ */
+async function init(){
+  try{
+    const data=await gasGet();
+    owners=data.owners&&data.owners.length?data.owners:defaultOwners;
+    books =data.books &&data.books.length ?data.books :defaultBooks;
+    // id を数値に変換
+    books=books.map(b=>({...b,id:Number(b.id)||Date.now()}));
+  }catch(e){
+    // オフライン時はlocalStorageから復元
+    owners=JSON.parse(localStorage.getItem("lending_owners")||"null")||defaultOwners;
+    books =JSON.parse(localStorage.getItem("lending_books") ||"null")||defaultBooks;
+    showToast("オフラインモード：ローカルデータを使用中");
+  }
+  // localStorageにもキャッシュ
+  localStorage.setItem("lending_owners",JSON.stringify(owners));
+  localStorage.setItem("lending_books", JSON.stringify(books));
+  document.getElementById("loading-screen").classList.add("hidden");
+  renderOwners();
+}
+
+/* ════ 保存：スプレッドシートに書き込み ════ */
+async function saveAll(){
+  localStorage.setItem("lending_owners",JSON.stringify(owners));
+  localStorage.setItem("lending_books", JSON.stringify(books));
+  try{
+    await gasPost({action:"saveOwners",owners});
+    await gasPost({action:"saveBooks", books});
+  }catch(e){
+    showToast("⚠ オフライン：ローカルに保存しました");
+  }
+}
+
+/* 手動同期ボタン */
+async function syncAll(){
+  const btn=document.getElementById("sync-btn");
+  btn.classList.add("syncing");btn.textContent="同期中…";
+  try{
+    const data=await gasGet();
+    if(data.owners&&data.owners.length) owners=data.owners;
+    if(data.books &&data.books.length){
+      books=data.books.map(b=>({...b,id:Number(b.id)||Date.now()}));
+    }
+    localStorage.setItem("lending_owners",JSON.stringify(owners));
+    localStorage.setItem("lending_books", JSON.stringify(books));
+    renderOwners();
+    showToast("同期しました");
+  }catch(e){
+    showToast("同期失敗：ネットワークを確認してください");
+  }
+  btn.classList.remove("syncing");btn.textContent="↑↓ 同期";
+}
+
+/* ════ ユーティリティ ════ */
 function updateBreadcrumb(parts){
   const el=document.getElementById("breadcrumb");
   if(!parts||!parts.length){el.innerHTML="";return;}
@@ -265,7 +353,7 @@ let toastTimer;
 function showToast(msg){
   const t=document.getElementById("toast");
   t.textContent=msg;t.classList.add("show");
-  clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove("show"),2400);
+  clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove("show"),2600);
 }
 function showScreen(id){
   ["screen-owners","screen-books","screen-detail","screen-mgmt"].forEach(s=>{
@@ -277,6 +365,8 @@ function thumbHtml(b){
   if(b.coverImage)return`<div class="book-thumb"><img src="${b.coverImage}" alt="${b.title}"></div>`;
   return`<div class="book-thumb"><span>${b.emoji||"📖"}</span></div>`;
 }
+
+/* ════ 画面1 ════ */
 function renderOwners(){
   const list=document.getElementById("owner-list");list.innerHTML="";
   if(!owners.length){list.innerHTML='<div class="empty-state">所有者がいません<br>⚙ 管理から追加してください</div>';updateBreadcrumb([]);return;}
@@ -295,6 +385,8 @@ function selectOwner(name){
   renderBooks();
   updateBreadcrumb([{label:"持ち主一覧",action:"backToOwners()"},{label:name}]);
 }
+
+/* ════ 画面2 ════ */
 function renderBooks(){
   const list=document.getElementById("book-list");list.innerHTML="";
   const my=books.filter(b=>b.owner===currentOwner);
@@ -311,6 +403,8 @@ function selectBook(id){
   updateBreadcrumb([{label:"持ち主一覧",action:"backToOwners()"},{label:currentOwner,action:"backToBooks()"},{label:b.title}]);
   renderDetail();
 }
+
+/* ════ 画面3 ════ */
 function renderDetail(){
   const b=books.find(x=>x.id===currentBookId);
   const card=document.getElementById("detail-card");const ok=b.status==="available";
@@ -321,18 +415,26 @@ function borrowBook(){
   const input=document.getElementById("borrower-name");const name=input?.value.trim()||"";
   if(!name){input.focus();input.style.borderColor="var(--red)";setTimeout(()=>input.style.borderColor="",1200);return;}
   const b=books.find(x=>x.id===currentBookId);b.status="borrowed";b.borrower=name;
-  saveBooks();showToast(`「${b.title}」を ${name} に貸出しました`);renderDetail();renderBooks();
+  // 貸出履歴を記録
+  const loan={bookId:b.id,borrower:name,loanDate:new Date().toISOString().slice(0,10),returnDate:""};
+  saveAll().then(()=>gasPost({action:"saveLoans",loans:[...getLoanHistory(),loan]}));
+  showToast(`「${b.title}」を ${name} に貸出しました`);renderDetail();renderBooks();
 }
 function returnBook(){
   const b=books.find(x=>x.id===currentBookId);b.status="available";b.borrower="";
-  saveBooks();showToast(`「${b.title}」が返却されました`);renderDetail();renderBooks();
+  saveAll();showToast(`「${b.title}」が返却されました`);renderDetail();renderBooks();
 }
 function deleteBook(id){
   const b=books.find(x=>x.id===id);
   openConfirm(`「${b.title}」を削除`,`この本の登録をすべて削除します。`,()=>{
-    books=books.filter(x=>x.id!==id);saveBooks();showToast(`「${b.title}」を削除しました`);backToBooks();
+    books=books.filter(x=>x.id!==id);saveAll();showToast(`「${b.title}」を削除しました`);backToBooks();
   });
 }
+function getLoanHistory(){
+  return JSON.parse(localStorage.getItem("lending_loans")||"[]");
+}
+
+/* ════ 画面4：管理 ════ */
 function openMgmt(){
   showScreen("screen-mgmt");
   updateBreadcrumb([{label:"持ち主一覧",action:"backToOwners()"},{label:"管理"}]);
@@ -354,15 +456,17 @@ function addOwner(){
   if(!name){input.focus();return;}
   if(owners.find(o=>o.name===name)){showToast("同名の所有者がすでにいます");return;}
   owners.push({name,emoji:EMOJI_POOL[owners.length%EMOJI_POOL.length]});
-  saveOwners();input.value="";renderMgmt();renderOwners();showToast(`「${name}」を追加しました`);
+  saveAll();input.value="";renderMgmt();renderOwners();showToast(`「${name}」を追加しました`);
 }
 function confirmDeleteOwner(name){
   const owned=books.filter(b=>b.owner===name).length;
   openConfirm(`「${name}」を削除`,`この所有者と登録されている ${owned} 冊の本をすべて削除します。この操作は取り消せません。`,()=>{
     owners=owners.filter(o=>o.name!==name);books=books.filter(b=>b.owner!==name);
-    saveOwners();saveBooks();renderMgmt();showToast(`「${name}」を削除しました`);
+    saveAll();renderMgmt();showToast(`「${name}」を削除しました`);
   });
 }
+
+/* ════ 確認ダイアログ ════ */
 let _cb=null;
 function openConfirm(title,body,onOk){
   document.getElementById("confirm-title").textContent=title;
@@ -371,6 +475,8 @@ function openConfirm(title,body,onOk){
 }
 function closeConfirm(){document.getElementById("confirm-overlay").classList.add("hidden");_cb=null;}
 document.getElementById("confirm-ok-btn").onclick=()=>{if(_cb)_cb();closeConfirm();};
+
+/* ════ ナビ ════ */
 function backToOwners(){showScreen("screen-owners");renderOwners();}
 function backToBooks(){
   showScreen("screen-books");renderBooks();
@@ -401,7 +507,6 @@ function setStatus(msg,cls){
   const el=document.getElementById("scanner-status");
   el.textContent=msg;el.className="scanner-status"+(cls?" "+cls:"");
 }
-
 async function openRegisterModal(){
   resetModal();
   document.getElementById("register-modal").classList.remove("hidden");
@@ -417,8 +522,7 @@ async function startScanner(){
     await html5QrCode.start(
       {facingMode:"environment"},
       {fps:10,qrbox:{width:250,height:100},formatsToSupport:[Html5QrcodeSupportedFormats.EAN_13,Html5QrcodeSupportedFormats.EAN_8,Html5QrcodeSupportedFormats.CODE_128]},
-      onScanSuccess,
-      ()=>{}
+      onScanSuccess,()=>{}
     );
   }catch(e){
     setStatus(`カメラを起動できませんでした：${e.message||e}`,"error");
@@ -429,7 +533,6 @@ function stopScanner(){
   scannedIsbn=null;
 }
 async function restartScanner(){
-  // リセットしてスキャナーを再起動
   pendingBook=null;scannedIsbn=null;
   document.getElementById("book-preview").classList.remove("active");
   document.getElementById("rescan-btn").classList.remove("active");
@@ -446,23 +549,19 @@ function onScanSuccess(text){
   if(!/^(978|979)\d{10}$/.test(text)&&!/^\d{9}[\dX]$/.test(text))return;
   if(text===scannedIsbn)return;
   scannedIsbn=text;
-  // スキャナーを停止して映像を止める
   html5QrCode.stop().then(()=>{
     html5QrCode.clear();html5QrCode=null;
-    // カメラ映像エリアを停止済み表示に切り替え
     document.getElementById("qr-reader").style.display="none";
     document.getElementById("scanner-stopped").classList.add("active");
     document.getElementById("scanner-stopped-msg").textContent=`ISBN: ${text}`;
     fetchBookInfo(text);
   }).catch(()=>{fetchBookInfo(text);});
 }
-
 async function fetchBookInfo(isbn){
-  setStatus(`書誌情報を取得中…`,"found");
+  setStatus("書誌情報を取得中…","found");
   document.getElementById("lookup-state").classList.add("active");
   document.getElementById("modal-sub").textContent="書誌情報を取得中…";
   try{
-    // OpenBD API（CORS対応・無料）
     const ob=await fetch(`https://api.openbd.jp/v1/get?isbn=${isbn}`);
     const od=await ob.json();
     const summary=od?.[0]?.summary;
@@ -502,10 +601,11 @@ function confirmRegister(){
   const cover=pendingBook?.coverImage||null;
   if(!title)return;
   books.push({id:Date.now(),owner:currentOwner,title,author,isbn,coverImage:cover,emoji:"📖",status:"available",borrower:""});
-  saveBooks();closeRegisterModal();renderBooks();showToast(`「${title}」を登録しました`);
+  saveAll();closeRegisterModal();renderBooks();showToast(`「${title}」を登録しました`);
 }
 
-renderOwners();
+/* ════ 初期化 ════ */
+init();
 document.getElementById("new-owner-input").addEventListener("keydown",e=>{if(e.key==="Enter")addOwner();});
 </script>
 </body>
