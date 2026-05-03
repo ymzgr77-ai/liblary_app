@@ -38,6 +38,7 @@
   .book-card:hover{border-color:var(--blue);box-shadow:0 2px 10px rgba(60,110,139,.1);transform:translateX(3px);}
   .book-thumb{width:44px;height:60px;border-radius:3px;border:1px solid var(--border);flex-shrink:0;background:var(--cream);overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:20px;box-shadow:1px 1px 4px rgba(26,26,24,.1);}
   .book-thumb img{width:100%;height:100%;object-fit:cover;}
+  .book-thumb svg{width:100%;height:100%;}
   .book-info{flex:1;min-width:0;}
   .book-title{font-size:15px;font-weight:600;margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
   .book-author{font-family:'DM Mono',monospace;font-size:11px;color:rgba(26,26,24,.4);margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
@@ -49,6 +50,7 @@
   .detail-cover-wrap{display:flex;justify-content:center;margin-bottom:24px;}
   .detail-cover{width:100px;height:138px;border-radius:4px;border:1px solid var(--border);background:var(--cream);display:flex;align-items:center;justify-content:center;font-size:40px;box-shadow:4px 4px 16px rgba(26,26,24,.12),-2px -2px 0 var(--cream);overflow:hidden;}
   .detail-cover img{width:100%;height:100%;object-fit:cover;}
+  .detail-cover svg{width:100%;height:100%;}
   .detail-title{font-size:20px;font-weight:600;text-align:center;margin-bottom:4px;line-height:1.4;}
   .detail-author{font-family:'DM Mono',monospace;font-size:12px;color:rgba(26,26,24,.5);text-align:center;margin-bottom:4px;}
   .detail-owner{font-family:'DM Mono',monospace;font-size:11px;color:rgba(26,26,24,.35);text-align:center;margin-bottom:20px;letter-spacing:.06em;}
@@ -81,7 +83,6 @@
   .screen{animation:fadeIn .22s ease;}
   @keyframes fadeIn{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
   .hidden{display:none!important;}
-  /* ローディング画面 */
   .loading-screen{position:fixed;inset:0;background:var(--paper);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;z-index:500;}
   .loading-screen.hidden{display:none!important;}
   .loading-title{font-size:22px;font-weight:600;letter-spacing:.05em;}
@@ -114,6 +115,7 @@
   .book-preview.active{display:flex;}
   .preview-cover{width:56px;height:78px;border-radius:3px;border:1px solid var(--border);flex-shrink:0;overflow:hidden;background:var(--cream);display:flex;align-items:center;justify-content:center;font-size:24px;}
   .preview-cover img{width:100%;height:100%;object-fit:cover;}
+  .preview-cover svg{width:100%;height:100%;}
   .preview-info{flex:1;min-width:0;}
   .preview-title{font-size:14px;font-weight:600;line-height:1.4;margin-bottom:4px;}
   .preview-author{font-family:'DM Mono',monospace;font-size:11px;color:rgba(26,26,24,.5);margin-bottom:4px;}
@@ -155,7 +157,6 @@
 </head>
 <body>
 
-<!-- 起動時ローディング -->
 <div class="loading-screen" id="loading-screen">
   <div class="loading-spinner"></div>
   <div class="loading-title">図書貸出</div>
@@ -222,7 +223,7 @@
     <button class="rescan-btn" id="rescan-btn" onclick="restartScanner()">↺ 別の本をスキャン</button>
     <div class="lookup-state" id="lookup-state">
       <div class="spinner"></div>
-      <span>書誌情報を取得中…</span>
+      <span id="lookup-msg">書誌情報を取得中…</span>
     </div>
     <div class="book-preview" id="book-preview">
       <div class="preview-cover" id="preview-cover">📖</div>
@@ -270,10 +271,7 @@ async function gasGet(){
   return res.json();
 }
 async function gasPost(body){
-  const res=await fetch(GAS_URL,{
-    method:"POST",
-    body:JSON.stringify(body)
-  });
+  const res=await fetch(GAS_URL,{method:"POST",body:JSON.stringify(body)});
   return res.json();
 }
 
@@ -286,61 +284,104 @@ const defaultBooks=[
   {id:3,owner:"佐藤",title:"環境政策の未来",author:"",isbn:"",coverImage:null,emoji:"🌿",status:"available",borrower:""},
   {id:4,owner:"鈴木",title:"都市計画概論",author:"",isbn:"",coverImage:null,emoji:"🏙️",status:"available",borrower:""}
 ];
-let owners=[];
-let books=[];
-let currentOwner="",currentBookId=null;
+let owners=[], books=[];
+let currentOwner="", currentBookId=null;
 
-/* ════ 起動時：スプレッドシートからデータ取得 ════ */
+/* ════ 起動 ════ */
 async function init(){
   try{
     const data=await gasGet();
     owners=data.owners&&data.owners.length?data.owners:defaultOwners;
-    books =data.books &&data.books.length ?data.books :defaultBooks;
-    // id を数値に変換
-    books=books.map(b=>({...b,id:Number(b.id)||Date.now()}));
+    books=data.books&&data.books.length?data.books.map(b=>({...b,id:Number(b.id)||Date.now()})):defaultBooks;
   }catch(e){
-    // オフライン時はlocalStorageから復元
     owners=JSON.parse(localStorage.getItem("lending_owners")||"null")||defaultOwners;
-    books =JSON.parse(localStorage.getItem("lending_books") ||"null")||defaultBooks;
+    books=JSON.parse(localStorage.getItem("lending_books")||"null")||defaultBooks;
     showToast("オフラインモード：ローカルデータを使用中");
   }
-  // localStorageにもキャッシュ
   localStorage.setItem("lending_owners",JSON.stringify(owners));
-  localStorage.setItem("lending_books", JSON.stringify(books));
+  localStorage.setItem("lending_books",JSON.stringify(books));
   document.getElementById("loading-screen").classList.add("hidden");
   renderOwners();
 }
 
-/* ════ 保存：スプレッドシートに書き込み ════ */
 async function saveAll(){
   localStorage.setItem("lending_owners",JSON.stringify(owners));
-  localStorage.setItem("lending_books", JSON.stringify(books));
+  localStorage.setItem("lending_books",JSON.stringify(books));
   try{
     await gasPost({action:"saveOwners",owners});
-    await gasPost({action:"saveBooks", books});
+    await gasPost({action:"saveBooks",books});
   }catch(e){
     showToast("⚠ オフライン：ローカルに保存しました");
   }
 }
 
-/* 手動同期ボタン */
 async function syncAll(){
   const btn=document.getElementById("sync-btn");
   btn.classList.add("syncing");btn.textContent="同期中…";
   try{
     const data=await gasGet();
-    if(data.owners&&data.owners.length) owners=data.owners;
-    if(data.books &&data.books.length){
-      books=data.books.map(b=>({...b,id:Number(b.id)||Date.now()}));
-    }
+    if(data.owners&&data.owners.length)owners=data.owners;
+    if(data.books&&data.books.length)books=data.books.map(b=>({...b,id:Number(b.id)||Date.now()}));
     localStorage.setItem("lending_owners",JSON.stringify(owners));
-    localStorage.setItem("lending_books", JSON.stringify(books));
-    renderOwners();
-    showToast("同期しました");
-  }catch(e){
-    showToast("同期失敗：ネットワークを確認してください");
-  }
+    localStorage.setItem("lending_books",JSON.stringify(books));
+    renderOwners();showToast("同期しました");
+  }catch(e){showToast("同期失敗：ネットワークを確認してください");}
   btn.classList.remove("syncing");btn.textContent="↑↓ 同期";
+}
+
+/* ════ SVGカバー自動生成（Claude API） ════ */
+async function generateCoverSVG(title, author){
+  try{
+    const prompt=`本の表紙デザインをSVGで生成してください。
+
+書名：${title}
+著者：${author||"不明"}
+
+以下の条件で生成してください：
+- viewBox="0 0 200 280" のSVG
+- 書名の内容・雰囲気に合った配色（2〜3色）
+- 幾何学的なパターンや抽象的な図形で装飾
+- 書名テキストを中央付近に配置（日本語対応、font-familyはserif）
+- 著者名を下部に小さく配置
+- シンプルで美しいデザイン
+- SVGタグのみ返してください。説明文不要。`;
+
+    const res=await fetch("https://api.anthropic.com/v1/messages",{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({
+        model:"claude-sonnet-4-20250514",
+        max_tokens:1000,
+        messages:[{role:"user",content:prompt}]
+      })
+    });
+    const data=await res.json();
+    const text=data.content?.find(c=>c.type==="text")?.text||"";
+    const match=text.match(/<svg[\s\S]*<\/svg>/i);
+    if(match) return match[0];
+  }catch(e){}
+  return null;
+}
+
+/* SVGをdataURLに変換 */
+function svgToDataUrl(svg){
+  return "data:image/svg+xml;base64,"+btoa(unescape(encodeURIComponent(svg)));
+}
+
+/* ════ coverImage の表示ヘルパー ════ */
+/* coverImageはdataURL・URL・SVG文字列のいずれかに対応 */
+function coverInnerHtml(b, large=false){
+  if(!b.coverImage) return `<span>${b.emoji||"📖"}</span>`;
+  // SVG文字列の場合はそのままインライン展開
+  if(b.coverImage.trimStart().startsWith("<svg")){
+    return b.coverImage;
+  }
+  return `<img src="${b.coverImage}" alt="${b.title}">`;
+}
+
+function thumbHtml(b){
+  const inner=coverInnerHtml(b);
+  return `<div class="book-thumb">${inner}</div>`;
 }
 
 /* ════ ユーティリティ ════ */
@@ -360,10 +401,6 @@ function showScreen(id){
     const el=document.getElementById(s);el.classList.add("hidden");el.classList.remove("screen");
   });
   const t=document.getElementById(id);t.classList.remove("hidden");void t.offsetWidth;t.classList.add("screen");
-}
-function thumbHtml(b){
-  if(b.coverImage)return`<div class="book-thumb"><img src="${b.coverImage}" alt="${b.title}"></div>`;
-  return`<div class="book-thumb"><span>${b.emoji||"📖"}</span></div>`;
 }
 
 /* ════ 画面1 ════ */
@@ -408,17 +445,14 @@ function selectBook(id){
 function renderDetail(){
   const b=books.find(x=>x.id===currentBookId);
   const card=document.getElementById("detail-card");const ok=b.status==="available";
-  const cover=b.coverImage?`<img src="${b.coverImage}" alt="${b.title}">`:`<span>${b.emoji||"📖"}</span>`;
+  const cover=coverInnerHtml(b,true);
   card.innerHTML=`<div class="detail-cover-wrap"><div class="detail-cover">${cover}</div></div><div class="detail-title">${b.title}</div>${b.author?`<div class="detail-author">${b.author}</div>`:""}<div class="detail-owner">所有者：${b.owner}</div><hr class="detail-divider"><div class="detail-row"><span class="detail-label">状態</span><span class="badge ${ok?"available":"borrowed"}">${ok?"貸出可":"貸出中"}</span></div>${!ok?`<div class="detail-row"><span class="detail-label">借りている人</span><span class="detail-value">${b.borrower}</span></div>`:""} ${b.isbn?`<div class="detail-row"><span class="detail-label">ISBN</span><span style="font-family:'DM Mono',monospace;font-size:12px">${b.isbn}</span></div>`:""}<div class="input-wrap ${ok?"visible":""}" id="borrower-input-wrap"><div class="input-label">借りる人の名前</div><input class="input-field" id="borrower-name" type="text" placeholder="名前を入力…" maxlength="20"></div><div class="btn-group"><button class="btn btn-primary" onclick="borrowBook()" ${!ok?"disabled":""}>借りる</button><button class="btn btn-secondary" onclick="returnBook()" ${ok?"disabled":""}>返却する</button></div><div class="btn-group" style="margin-top:10px"><button class="btn btn-danger" style="font-size:13px;padding:10px 0" onclick="deleteBook(${b.id})">この本を削除</button></div>`;
 }
 function borrowBook(){
   const input=document.getElementById("borrower-name");const name=input?.value.trim()||"";
   if(!name){input.focus();input.style.borderColor="var(--red)";setTimeout(()=>input.style.borderColor="",1200);return;}
   const b=books.find(x=>x.id===currentBookId);b.status="borrowed";b.borrower=name;
-  // 貸出履歴を記録
-  const loan={bookId:b.id,borrower:name,loanDate:new Date().toISOString().slice(0,10),returnDate:""};
-  saveAll().then(()=>gasPost({action:"saveLoans",loans:[...getLoanHistory(),loan]}));
-  showToast(`「${b.title}」を ${name} に貸出しました`);renderDetail();renderBooks();
+  saveAll();showToast(`「${b.title}」を ${name} に貸出しました`);renderDetail();renderBooks();
 }
 function returnBook(){
   const b=books.find(x=>x.id===currentBookId);b.status="available";b.borrower="";
@@ -429,9 +463,6 @@ function deleteBook(id){
   openConfirm(`「${b.title}」を削除`,`この本の登録をすべて削除します。`,()=>{
     books=books.filter(x=>x.id!==id);saveAll();showToast(`「${b.title}」を削除しました`);backToBooks();
   });
-}
-function getLoanHistory(){
-  return JSON.parse(localStorage.getItem("lending_loans")||"[]");
 }
 
 /* ════ 画面4：管理 ════ */
@@ -484,7 +515,7 @@ function backToBooks(){
 }
 
 /* ════ スキャナー ════ */
-let html5QrCode=null,scannedIsbn=null,pendingBook=null;
+let html5QrCode=null, scannedIsbn=null, pendingBook=null;
 
 function resetModal(){
   scannedIsbn=null;pendingBook=null;
@@ -507,15 +538,21 @@ function setStatus(msg,cls){
   const el=document.getElementById("scanner-status");
   el.textContent=msg;el.className="scanner-status"+(cls?" "+cls:"");
 }
+
 async function openRegisterModal(){
   resetModal();
   document.getElementById("register-modal").classList.remove("hidden");
   await startScanner();
 }
+
 function closeRegisterModal(){
   stopScanner();
   document.getElementById("register-modal").classList.add("hidden");
+  const qr=document.getElementById("qr-reader");
+  qr.innerHTML="";qr.style.display="block";
+  document.getElementById("scanner-stopped").classList.remove("active");
 }
+
 async function startScanner(){
   html5QrCode=new Html5Qrcode("qr-reader");
   try{
@@ -528,16 +565,22 @@ async function startScanner(){
     setStatus(`カメラを起動できませんでした：${e.message||e}`,"error");
   }
 }
+
 function stopScanner(){
-  if(html5QrCode){html5QrCode.stop().catch(()=>{});html5QrCode.clear();html5QrCode=null;}
+  if(html5QrCode){
+    try{html5QrCode.stop().catch(()=>{});html5QrCode.clear();}catch(_){}
+    html5QrCode=null;
+  }
   scannedIsbn=null;
 }
+
 async function restartScanner(){
   pendingBook=null;scannedIsbn=null;
   document.getElementById("book-preview").classList.remove("active");
   document.getElementById("rescan-btn").classList.remove("active");
   document.getElementById("scanner-stopped").classList.remove("active");
-  document.getElementById("qr-reader").style.display="block";
+  const qr=document.getElementById("qr-reader");
+  qr.innerHTML="";qr.style.display="block";
   document.getElementById("register-confirm-btn").disabled=true;
   document.getElementById("manual-title").value="";
   document.getElementById("manual-author").value="";
@@ -545,6 +588,7 @@ async function restartScanner(){
   document.getElementById("modal-sub").textContent="バーコード（ISBN）をカメラに向けてください";
   await startScanner();
 }
+
 function onScanSuccess(text){
   if(!/^(978|979)\d{10}$/.test(text)&&!/^\d{9}[\dX]$/.test(text))return;
   if(text===scannedIsbn)return;
@@ -557,18 +601,33 @@ function onScanSuccess(text){
     fetchBookInfo(text);
   }).catch(()=>{fetchBookInfo(text);});
 }
+
+/* ════ 書誌情報取得 ＋ SVGカバー生成 ════ */
 async function fetchBookInfo(isbn){
   setStatus("書誌情報を取得中…","found");
   document.getElementById("lookup-state").classList.add("active");
+  document.getElementById("lookup-msg").textContent="書誌情報を取得中…";
   document.getElementById("modal-sub").textContent="書誌情報を取得中…";
+
   try{
+    // OpenBD で書誌情報・表紙を取得
     const ob=await fetch(`https://api.openbd.jp/v1/get?isbn=${isbn}`);
     const od=await ob.json();
     const summary=od?.[0]?.summary;
     if(!summary?.title)throw new Error("書誌情報が見つかりませんでした");
+
     const title=summary.title||"";
     const author=summary.author||"";
-    const coverImage=summary.cover||null;
+    let coverImage=summary.cover||null;
+
+    // 表紙画像が取得できない場合 → Claude APIでSVGカバーを生成
+    if(!coverImage){
+      document.getElementById("lookup-msg").textContent="表紙画像を生成中…";
+      setStatus("表紙画像を生成中…","found");
+      const svg=await generateCoverSVG(title,author);
+      if(svg) coverImage=svg;  // SVG文字列をそのまま格納
+    }
+
     document.getElementById("lookup-state").classList.remove("active");
     pendingBook={title,author,isbn,coverImage};
     showPreview(pendingBook);
@@ -576,6 +635,7 @@ async function fetchBookInfo(isbn){
     document.getElementById("modal-sub").textContent="内容を確認して登録してください";
     document.getElementById("rescan-btn").classList.add("active");
     syncBtn();
+
   }catch(e){
     document.getElementById("lookup-state").classList.remove("active");
     setStatus(`取得失敗 — 手動入力してください (${e.message})`,"error");
@@ -584,9 +644,18 @@ async function fetchBookInfo(isbn){
     document.getElementById("manual-title").focus();
   }
 }
+
 function showPreview(book){
   const cover=document.getElementById("preview-cover");
-  cover.innerHTML=book.coverImage?`<img src="${book.coverImage}" alt="${book.title}">`:"📖";
+  if(book.coverImage){
+    if(book.coverImage.trimStart().startsWith("<svg")){
+      cover.innerHTML=book.coverImage;
+    }else{
+      cover.innerHTML=`<img src="${book.coverImage}" alt="${book.title}">`;
+    }
+  }else{
+    cover.innerHTML="📖";
+  }
   document.getElementById("preview-title").textContent=book.title;
   document.getElementById("preview-author").textContent=book.author||"";
   document.getElementById("preview-isbn").textContent=`ISBN ${book.isbn}`;
@@ -594,6 +663,7 @@ function showPreview(book){
   document.getElementById("manual-title").value=book.title;
   document.getElementById("manual-author").value=book.author||"";
 }
+
 function confirmRegister(){
   const title=document.getElementById("manual-title").value.trim()||pendingBook?.title||"";
   const author=document.getElementById("manual-author").value.trim()||pendingBook?.author||"";
