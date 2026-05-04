@@ -477,18 +477,22 @@ function renderDetail(){
       <button class="btn-delete-sm" onclick="deleteBook(${b.id})">この本を登録から削除する</button>
     </div>`;
 }
-function borrowBook(){
+async function borrowBook(){
   const input=document.getElementById("borrower-name");
   const name=input?.value.trim()||"";
   if(!name){input.focus();input.style.borderColor="var(--red)";setTimeout(()=>input.style.borderColor="",1200);return;}
   const b=books.find(x=>x.id===currentBookId);
   b.status="borrowed";b.borrower=name;
-  saveAll();showToast(`「${b.title}」を ${name} に貸出しました`);renderDetail();renderBooks();
+  renderDetail();renderBooks();
+  await saveAll();
+  showToast(`「${b.title}」を ${name} に貸出しました`);
 }
-function returnBook(){
+async function returnBook(){
   const b=books.find(x=>x.id===currentBookId);
   b.status="available";b.borrower="";
-  saveAll();showToast(`「${b.title}」が返却されました`);renderDetail();renderBooks();
+  renderDetail();renderBooks();
+  await saveAll();
+  showToast(`「${b.title}」が返却されました`);
 }
 function deleteBook(id){
   const b=books.find(x=>x.id===id);
@@ -756,15 +760,17 @@ function clearPhoto(){
 }
 
 /* ════ 登録確定 ════ */
-function confirmRegister(){
+async function confirmRegister(){
   const title=document.getElementById("manual-title").value.trim()||pendingBook?.title||"";
   const author=document.getElementById("manual-author").value.trim()||pendingBook?.author||"";
   const isbn=pendingBook?.isbn||"";
-  // 写真（Drive URL）があれば優先、なければOpenBD/SVGカバー
   const cover=capturedPhotoDataUrl||pendingBook?.coverImage||null;
   if(!title)return;
+  document.getElementById("register-confirm-btn").disabled=true;
+  document.getElementById("register-confirm-btn").textContent="保存中…";
   books.push({id:Date.now(),owner:currentOwner,title,author,isbn,coverImage:cover,emoji:"📖",status:"available",borrower:""});
-  saveAll();closeRegisterModal();renderBooks();showToast(`「${title}」を登録しました`);
+  await saveAll();
+  closeRegisterModal();renderBooks();showToast(`「${title}」を登録しました`);
 }
 
 /* ════ 初期化 ════ */
