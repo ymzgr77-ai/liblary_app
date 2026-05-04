@@ -336,7 +336,7 @@ async function init(){
   document.getElementById("loading-screen").classList.add("hidden");
   renderOwners();
   // 初期状態を履歴に積む
-  history.replaceState({screen:"screen-owners", owner:"", bookId:null}, "", "");
+  history.replaceState({screen:"screen-owners", owner:"", bookId:null}, "", "#screen-owners");
 }
 
 async function saveAll(){
@@ -410,7 +410,8 @@ function showScreen(id, pushHistory=true){
   });
   const t=document.getElementById(id);t.classList.remove("hidden");void t.offsetWidth;t.classList.add("screen");
   if(pushHistory){
-    history.pushState({screen:id, owner:currentOwner, bookId:currentBookId}, "", "");
+    const state={screen:id, owner:currentOwner, bookId:currentBookId};
+    history.pushState(state, "", "#"+id);
   }
 }
 
@@ -782,64 +783,75 @@ async function confirmRegister(){
 init();
 document.getElementById("new-owner-input").addEventListener("keydown",e=>{if(e.key==="Enter")addOwner();});
 
-// スマホ戻るボタン対応
-window.addEventListener("popstate", (e)=>{
+window.addEventListener("popstate",(e)=>{
   // モーダルが開いていれば閉じる
   if(!document.getElementById("register-modal").classList.contains("hidden")){
     closeRegisterModal();
+    history.pushState(
+      {screen:getCurrentScreen(), owner:currentOwner, bookId:currentBookId},
+      "", "#"+getCurrentScreen()
+    );
     return;
   }
   if(!document.getElementById("confirm-overlay").classList.contains("hidden")){
     closeConfirm();
+    history.pushState(
+      {screen:getCurrentScreen(), owner:currentOwner, bookId:currentBookId},
+      "", "#"+getCurrentScreen()
+    );
     return;
   }
 
-  const state = e.state;
+  const state=e.state;
   if(!state){
-    // 履歴がない場合は所有者一覧に戻る
-    showScreen("screen-owners", false);
+    showScreen("screen-owners",false);
     renderOwners();
     return;
   }
 
-  // 状態を復元
-  currentOwner  = state.owner   || "";
-  currentBookId = state.bookId  || null;
+  currentOwner  = state.owner  || "";
+  currentBookId = state.bookId || null;
 
   switch(state.screen){
     case "screen-owners":
-      showScreen("screen-owners", false);
+      showScreen("screen-owners",false);
       renderOwners();
       break;
     case "screen-books":
-      showScreen("screen-books", false);
-      document.getElementById("books-label").textContent = currentOwner + " の蔵書";
+      showScreen("screen-books",false);
+      document.getElementById("books-label").textContent=currentOwner+" の蔵書";
       renderBooks();
       updateBreadcrumb([
-        {label:"持ち主一覧", action:"backToOwners()"},
-        {label: currentOwner}
+        {label:"持ち主一覧",action:"backToOwners()"},
+        {label:currentOwner}
       ]);
       break;
     case "screen-detail":
-      showScreen("screen-detail", false);
+      if(!currentBookId){showScreen("screen-books",false);renderBooks();return;}
+      showScreen("screen-detail",false);
       renderDetail();
       const b=books.find(x=>x.id===currentBookId);
       if(b) updateBreadcrumb([
-        {label:"持ち主一覧", action:"backToOwners()"},
-        {label: currentOwner, action:"backToBooks()"},
-        {label: b.title}
+        {label:"持ち主一覧",action:"backToOwners()"},
+        {label:currentOwner,action:"backToBooks()"},
+        {label:b.title}
       ]);
       break;
     case "screen-mgmt":
-      showScreen("screen-mgmt", false);
+      showScreen("screen-mgmt",false);
       updateBreadcrumb([
-        {label:"持ち主一覧", action:"backToOwners()"},
+        {label:"持ち主一覧",action:"backToOwners()"},
         {label:"管理"}
       ]);
       renderMgmt();
       break;
   }
 });
+
+function getCurrentScreen(){
+  const screens=["screen-owners","screen-books","screen-detail","screen-mgmt"];
+  return screens.find(s=>!document.getElementById(s).classList.contains("hidden"))||"screen-owners";
+}
 </script>
 </body>
 </html>
