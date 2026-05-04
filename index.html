@@ -530,8 +530,10 @@ async function borrowBook(){
   const b=books.find(x=>x.id===currentBookId);
   b.status="borrowed";b.borrower=name;
   renderDetail();renderBooks();
-  await saveAll();
+  // ポップアップを即座に表示
   showResult("📖","貸出しました",`「${b.title}」を\n${name} さんに貸出しました`);
+  // 保存はバックグラウンドで実行
+  saveAll();
 }
 
 async function returnBook(){
@@ -539,8 +541,10 @@ async function returnBook(){
   const borrower=b.borrower;
   b.status="available";b.borrower="";
   renderDetail();renderBooks();
-  await saveAll();
+  // ポップアップを即座に表示
   showResult("✅","返却されました",`「${b.title}」が\n${borrower?borrower+" さんから":""}返却されました`);
+  // 保存はバックグラウンドで実行
+  saveAll();
 }
 
 function deleteBook(id){
@@ -803,10 +807,12 @@ async function confirmRegister(){
   document.getElementById("register-confirm-btn").disabled=true;
   document.getElementById("register-confirm-btn").textContent="保存中…";
   books.push({id:Date.now(),owner:currentOwner,title,author,isbn,coverImage:cover,emoji:"📖",status:"available",borrower:""});
-  await saveAll();
   closeRegisterModal();
   renderBooks();
+  // ポップアップを即座に表示
   showResult("📚","登録しました",`「${title}」を\n${currentOwner} の蔵書に登録しました`);
+  // 保存はバックグラウンドで実行
+  saveAll();
 }
 
 /* ════ 初期化 ════ */
