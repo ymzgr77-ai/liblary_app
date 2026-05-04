@@ -5,181 +5,285 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>図書貸出</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@300;400;600&family=DM+Mono:wght@400;500&family=Cormorant+Garamond:wght@400;600&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
 <style>
-  :root{--ink:#1a1a18;--paper:#f5f2ec;--cream:#ece8df;--accent:#8b5e3c;--blue:#3c6e8b;--green:#3a6b4a;--red:#8b3a3a;--shadow:rgba(26,26,24,0.08);--border:rgba(26,26,24,0.12);}
+  :root{
+    --bg:      #0f1117;
+    --surface: #181c27;
+    --surface2:#1f2435;
+    --border:  rgba(255,255,255,0.07);
+    --border2: rgba(255,255,255,0.12);
+    --gold:    #c9a84c;
+    --gold2:   #e8c96a;
+    --ink:     #e8e4d9;
+    --ink2:    rgba(232,228,217,0.55);
+    --ink3:    rgba(232,228,217,0.3);
+    --green:   #4e9e6e;
+    --red:     #c0524a;
+    --blue:    #4a7fa5;
+    --shadow:  rgba(0,0,0,0.4);
+  }
   *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
-  body{font-family:'Noto Serif JP',serif;background:var(--paper);color:var(--ink);min-height:100vh;overflow-x:hidden;}
-  body::before{content:'';position:fixed;inset:0;background-image:repeating-linear-gradient(0deg,transparent,transparent 28px,rgba(26,26,24,.025) 28px,rgba(26,26,24,.025) 29px);pointer-events:none;z-index:0;}
-  .app-wrap{max-width:480px;margin:0 auto;padding:24px 20px 60px;position:relative;z-index:1;}
-  .header{display:flex;align-items:center;justify-content:space-between;margin-bottom:32px;padding-bottom:16px;border-bottom:2px solid var(--ink);}
-  .header-left{display:flex;align-items:baseline;gap:12px;}
-  .header-title{font-size:26px;font-weight:600;letter-spacing:.05em;line-height:1;}
-  .header-sub{font-family:'DM Mono',monospace;font-size:11px;color:var(--accent);letter-spacing:.12em;text-transform:uppercase;}
+  body{font-family:'Noto Serif JP',serif;background:var(--bg);color:var(--ink);min-height:100vh;overflow-x:hidden;}
+
+  /* 背景グレイン */
+  body::before{
+    content:'';position:fixed;inset:0;
+    background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events:none;z-index:0;opacity:.6;
+  }
+
+  .app-wrap{max-width:480px;margin:0 auto;padding:28px 20px 72px;position:relative;z-index:1;}
+
+  /* ── ヘッダー ── */
+  .header{display:flex;align-items:center;justify-content:space-between;margin-bottom:36px;padding-bottom:20px;border-bottom:1px solid var(--border2);}
+  .header-left{display:flex;flex-direction:column;gap:3px;}
+  .header-title{font-family:'Cormorant Garamond',serif;font-size:28px;font-weight:600;letter-spacing:.08em;line-height:1;color:var(--gold2);}
+  .header-sub{font-family:'DM Mono',monospace;font-size:10px;color:var(--ink3);letter-spacing:.2em;text-transform:uppercase;}
   .header-right{display:flex;align-items:center;gap:8px;}
-  .header-mgmt{padding:6px 12px;border:1px solid var(--border);border-radius:3px;font-family:'DM Mono',monospace;font-size:11px;letter-spacing:.08em;color:rgba(26,26,24,.5);cursor:pointer;background:white;transition:all .16s;}
-  .header-mgmt:hover{border-color:var(--accent);color:var(--accent);}
-  .sync-btn{padding:6px 12px;border:1px solid var(--border);border-radius:3px;font-family:'DM Mono',monospace;font-size:11px;letter-spacing:.08em;color:rgba(26,26,24,.5);cursor:pointer;background:white;transition:all .16s;}
-  .sync-btn:hover{border-color:var(--blue);color:var(--blue);}
-  .sync-btn.syncing{color:var(--blue);border-color:var(--blue);}
-  .breadcrumb{display:flex;align-items:center;gap:6px;font-family:'DM Mono',monospace;font-size:11px;color:rgba(26,26,24,.45);margin-bottom:20px;letter-spacing:.06em;min-height:18px;}
-  .breadcrumb span{cursor:pointer;}
-  .breadcrumb span:hover{color:var(--accent);}
-  .breadcrumb .sep{opacity:.4;}
-  .breadcrumb .current{color:var(--ink);font-weight:500;}
-  .section-label{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:rgba(26,26,24,.4);margin-bottom:12px;}
-  .owner-card{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;background:white;border:1px solid var(--border);border-radius:4px;margin-bottom:8px;cursor:pointer;transition:all .18s;box-shadow:0 1px 3px var(--shadow);}
-  .owner-card:hover{border-color:var(--accent);box-shadow:0 2px 10px rgba(139,94,60,.12);transform:translateX(3px);}
-  .owner-name{font-size:16px;font-weight:600;letter-spacing:.04em;}
-  .owner-count{font-family:'DM Mono',monospace;font-size:11px;color:rgba(26,26,24,.4);}
-  .owner-arrow{color:var(--accent);font-size:14px;opacity:.6;margin-left:8px;}
-  .book-card{display:flex;align-items:center;gap:14px;padding:12px 16px;background:white;border:1px solid var(--border);border-radius:4px;margin-bottom:8px;cursor:pointer;transition:all .18s;box-shadow:0 1px 3px var(--shadow);}
-  .book-card:hover{border-color:var(--blue);box-shadow:0 2px 10px rgba(60,110,139,.1);transform:translateX(3px);}
-  .book-thumb{width:44px;height:60px;border-radius:3px;border:1px solid var(--border);flex-shrink:0;background:var(--cream);overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:20px;box-shadow:1px 1px 4px rgba(26,26,24,.1);}
+  .header-mgmt,.sync-btn{
+    padding:6px 13px;border:1px solid var(--border2);border-radius:2px;
+    font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.1em;
+    color:var(--ink3);cursor:pointer;background:transparent;transition:all .18s;
+  }
+  .header-mgmt:hover,.sync-btn:hover{border-color:var(--gold);color:var(--gold);}
+  .sync-btn.syncing{color:var(--gold);border-color:var(--gold);}
+
+  /* ── パンくず ── */
+  .breadcrumb{display:flex;align-items:center;gap:6px;font-family:'DM Mono',monospace;font-size:10px;color:var(--ink3);margin-bottom:22px;letter-spacing:.08em;min-height:16px;}
+  .breadcrumb span{cursor:pointer;transition:color .15s;}
+  .breadcrumb span:hover{color:var(--gold);}
+  .breadcrumb .sep{opacity:.3;}
+  .breadcrumb .current{color:var(--ink2);font-weight:500;}
+
+  .section-label{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.22em;text-transform:uppercase;color:var(--ink3);margin-bottom:14px;display:flex;align-items:center;gap:10px;}
+  .section-label::after{content:'';flex:1;height:1px;background:var(--border);}
+
+  /* ── 所有者カード ── */
+  .owner-card{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:18px 20px;background:var(--surface);
+    border:1px solid var(--border);border-radius:3px;
+    margin-bottom:8px;cursor:pointer;transition:all .2s;
+  }
+  .owner-card:hover{border-color:var(--gold);background:var(--surface2);transform:translateX(4px);}
+  .owner-name{font-size:16px;font-weight:600;letter-spacing:.04em;color:var(--ink);}
+  .owner-count{font-family:'DM Mono',monospace;font-size:10px;color:var(--ink3);}
+  .owner-arrow{color:var(--gold);font-size:13px;opacity:.7;margin-left:8px;}
+
+  /* ── 本カード ── */
+  .book-card{
+    display:flex;align-items:center;gap:14px;
+    padding:13px 16px;background:var(--surface);
+    border:1px solid var(--border);border-radius:3px;
+    margin-bottom:8px;cursor:pointer;transition:all .2s;
+  }
+  .book-card:hover{border-color:var(--gold);background:var(--surface2);transform:translateX(4px);}
+  .book-thumb{width:44px;height:60px;border-radius:2px;border:1px solid var(--border2);flex-shrink:0;background:var(--surface2);overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:20px;box-shadow:2px 2px 8px rgba(0,0,0,.4);}
   .book-thumb img,.book-thumb svg{width:100%;height:100%;object-fit:cover;}
   .book-info{flex:1;min-width:0;}
-  .book-title{font-size:15px;font-weight:600;margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-  .book-author{font-family:'DM Mono',monospace;font-size:11px;color:rgba(26,26,24,.4);margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-  .book-meta{font-family:'DM Mono',monospace;font-size:11px;color:rgba(26,26,24,.35);}
-  .badge{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.08em;padding:3px 8px;border-radius:2px;flex-shrink:0;}
-  .badge.available{background:rgba(58,107,74,.1);color:var(--green);border:1px solid rgba(58,107,74,.2);}
-  .badge.borrowed{background:rgba(139,58,58,.08);color:var(--red);border:1px solid rgba(139,58,58,.18);}
-  .detail-card{background:white;border:1px solid var(--border);border-radius:4px;padding:28px 24px;box-shadow:0 2px 12px var(--shadow);}
-  .detail-cover-wrap{display:flex;justify-content:center;margin-bottom:24px;}
-  .detail-cover{width:100px;height:138px;border-radius:4px;border:1px solid var(--border);background:var(--cream);display:flex;align-items:center;justify-content:center;font-size:40px;box-shadow:4px 4px 16px rgba(26,26,24,.12),-2px -2px 0 var(--cream);overflow:hidden;}
+  .book-title{font-size:14px;font-weight:600;margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--ink);}
+  .book-author{font-family:'DM Mono',monospace;font-size:10px;color:var(--ink3);margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .book-meta{font-family:'DM Mono',monospace;font-size:10px;color:var(--ink3);}
+
+  /* ── バッジ ── */
+  .badge{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.1em;padding:3px 9px;border-radius:2px;flex-shrink:0;text-transform:uppercase;}
+  .badge.available{background:rgba(78,158,110,.12);color:#6ec491;border:1px solid rgba(78,158,110,.25);}
+  .badge.borrowed{background:rgba(192,82,74,.1);color:#e07a72;border:1px solid rgba(192,82,74,.22);}
+
+  /* ── 詳細画面 ── */
+  .detail-card{background:var(--surface);border:1px solid var(--border);border-radius:3px;padding:32px 26px;box-shadow:0 4px 24px rgba(0,0,0,.3);}
+  .detail-cover-wrap{display:flex;justify-content:center;margin-bottom:28px;}
+  .detail-cover{
+    width:108px;height:148px;border-radius:3px;border:1px solid var(--border2);
+    background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:44px;
+    box-shadow:6px 6px 24px rgba(0,0,0,.5),-1px -1px 0 rgba(201,168,76,.15);overflow:hidden;
+  }
   .detail-cover img,.detail-cover svg{width:100%;height:100%;object-fit:cover;}
-  .detail-title{font-size:20px;font-weight:600;text-align:center;margin-bottom:4px;line-height:1.4;}
-  .detail-author{font-family:'DM Mono',monospace;font-size:12px;color:rgba(26,26,24,.5);text-align:center;margin-bottom:4px;}
-  .detail-owner{font-family:'DM Mono',monospace;font-size:11px;color:rgba(26,26,24,.35);text-align:center;margin-bottom:20px;letter-spacing:.06em;}
-  .detail-divider{border:none;border-top:1px dashed var(--border);margin:20px 0;}
-  .detail-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
-  .detail-label{font-family:'DM Mono',monospace;font-size:11px;color:rgba(26,26,24,.4);letter-spacing:.08em;text-transform:uppercase;}
-  .detail-value{font-weight:600;font-size:14px;}
-  .btn-group{display:flex;gap:10px;margin-top:24px;}
-  .btn{flex:1;padding:13px 0;border:none;border-radius:3px;font-family:'Noto Serif JP',serif;font-size:14px;font-weight:600;letter-spacing:.08em;cursor:pointer;transition:all .16s;}
-  .btn-primary{background:var(--blue);color:white;}
-  .btn-primary:hover{background:#2e5a73;}
-  .btn-primary:disabled{background:var(--cream);color:rgba(26,26,24,.3);cursor:not-allowed;}
-  .btn-secondary{background:var(--cream);color:var(--ink);border:1px solid var(--border);}
-  .btn-secondary:hover{background:#e0dbd0;}
-  .btn-secondary:disabled{color:rgba(26,26,24,.3);cursor:not-allowed;}
-  .btn-danger{background:rgba(139,58,58,.08);color:var(--red);border:1px solid rgba(139,58,58,.2);}
-  .btn-danger:hover{background:rgba(139,58,58,.15);}
-  .delete-zone{margin-top:40px;padding-top:20px;border-top:1px dashed var(--border);display:flex;justify-content:center;}
-  .btn-delete-sm{padding:8px 20px;border:1px solid rgba(139,58,58,.2);border-radius:3px;background:none;color:rgba(139,58,58,.5);font-family:'DM Mono',monospace;font-size:11px;letter-spacing:.08em;cursor:pointer;transition:all .2s;}
-  .btn-delete-sm:hover{background:rgba(139,58,58,.08);color:var(--red);border-color:rgba(139,58,58,.4);}
-  .btn-back{display:inline-flex;align-items:center;gap:6px;margin-top:20px;padding:0;background:none;border:none;font-family:'DM Mono',monospace;font-size:12px;color:rgba(26,26,24,.45);cursor:pointer;letter-spacing:.06em;transition:color .15s;}
-  .btn-back:hover{color:var(--accent);}
-  .input-wrap{margin-top:16px;display:none;}
+  .detail-title{font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:600;text-align:center;margin-bottom:5px;line-height:1.4;color:var(--ink);}
+  .detail-author{font-family:'DM Mono',monospace;font-size:11px;color:var(--ink3);text-align:center;margin-bottom:6px;}
+  .detail-owner{font-family:'DM Mono',monospace;font-size:10px;color:var(--ink3);text-align:center;margin-bottom:24px;letter-spacing:.08em;}
+  .detail-divider{border:none;border-top:1px solid var(--border);margin:22px 0;}
+  .detail-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+  .detail-label{font-family:'DM Mono',monospace;font-size:10px;color:var(--ink3);letter-spacing:.1em;text-transform:uppercase;}
+  .detail-value{font-weight:600;font-size:14px;color:var(--ink);}
+
+  /* ── ボタン ── */
+  .btn-group{display:flex;gap:10px;margin-top:26px;}
+  .btn{flex:1;padding:13px 0;border:none;border-radius:2px;font-family:'Noto Serif JP',serif;font-size:14px;font-weight:600;letter-spacing:.08em;cursor:pointer;transition:all .18s;}
+  .btn-primary{background:var(--gold);color:#0f1117;}
+  .btn-primary:hover{background:var(--gold2);}
+  .btn-primary:disabled{background:var(--surface2);color:var(--ink3);cursor:not-allowed;}
+  .btn-secondary{background:transparent;color:var(--ink2);border:1px solid var(--border2);}
+  .btn-secondary:hover{border-color:var(--ink2);color:var(--ink);}
+  .btn-secondary:disabled{color:var(--ink3);border-color:var(--border);cursor:not-allowed;}
+  .btn-danger{background:transparent;color:rgba(192,82,74,.7);border:1px solid rgba(192,82,74,.2);}
+  .btn-danger:hover{background:rgba(192,82,74,.08);color:var(--red);border-color:rgba(192,82,74,.4);}
+  .delete-zone{margin-top:40px;padding-top:20px;border-top:1px solid var(--border);display:flex;justify-content:center;}
+  .btn-delete-sm{padding:7px 18px;border:1px solid rgba(192,82,74,.18);border-radius:2px;background:none;color:rgba(192,82,74,.45);font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.08em;cursor:pointer;transition:all .2s;}
+  .btn-delete-sm:hover{background:rgba(192,82,74,.08);color:var(--red);border-color:rgba(192,82,74,.35);}
+  .btn-back{display:inline-flex;align-items:center;gap:6px;margin-top:22px;padding:0;background:none;border:none;font-family:'DM Mono',monospace;font-size:11px;color:var(--ink3);cursor:pointer;letter-spacing:.08em;transition:color .15s;}
+  .btn-back:hover{color:var(--gold);}
+
+  /* ── 入力フォーム ── */
+  .input-wrap{margin-top:18px;display:none;}
   .input-wrap.visible{display:block;}
-  .input-label{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:rgba(26,26,24,.45);margin-bottom:6px;}
-  .input-field{width:100%;padding:10px 14px;border:1px solid var(--border);border-radius:3px;font-family:'Noto Serif JP',serif;font-size:14px;background:var(--paper);color:var(--ink);outline:none;transition:border-color .15s;}
-  .input-field:focus{border-color:var(--blue);}
-  .empty-state{text-align:center;padding:48px 0;color:rgba(26,26,24,.35);font-family:'DM Mono',monospace;font-size:12px;letter-spacing:.08em;line-height:2;}
-  .add-book-bar{display:flex;align-items:center;justify-content:center;gap:8px;margin-top:20px;padding:13px 0;border:1.5px dashed var(--border);border-radius:4px;cursor:pointer;color:rgba(26,26,24,.4);font-family:'DM Mono',monospace;font-size:12px;letter-spacing:.1em;transition:all .18s;background:transparent;width:100%;}
-  .add-book-bar:hover{border-color:var(--blue);color:var(--blue);background:rgba(60,110,139,.04);}
-  .toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--ink);color:var(--paper);font-family:'DM Mono',monospace;font-size:12px;letter-spacing:.06em;padding:10px 20px;border-radius:2px;opacity:0;transition:all .3s;white-space:nowrap;z-index:300;}
+  .input-label{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink3);margin-bottom:7px;}
+  .input-field{width:100%;padding:11px 14px;border:1px solid var(--border2);border-radius:2px;font-family:'Noto Serif JP',serif;font-size:14px;background:var(--surface2);color:var(--ink);outline:none;transition:border-color .15s;}
+  .input-field:focus{border-color:var(--gold);}
+  .input-field::placeholder{color:var(--ink3);}
+
+  .empty-state{text-align:center;padding:56px 0;color:var(--ink3);font-family:'DM Mono',monospace;font-size:11px;letter-spacing:.1em;line-height:2.2;}
+
+  /* ── 本登録ボタン ── */
+  .add-book-bar{
+    display:flex;align-items:center;justify-content:center;gap:10px;
+    margin-top:20px;padding:14px 0;
+    border:1px dashed rgba(201,168,76,.25);border-radius:3px;
+    cursor:pointer;color:rgba(201,168,76,.45);
+    font-family:'DM Mono',monospace;font-size:11px;letter-spacing:.12em;
+    transition:all .2s;background:transparent;width:100%;
+  }
+  .add-book-bar:hover{border-color:var(--gold);color:var(--gold);background:rgba(201,168,76,.04);}
+
+  /* ── トースト ── */
+  .toast{
+    position:fixed;bottom:32px;left:50%;
+    transform:translateX(-50%) translateY(80px);
+    background:var(--surface2);color:var(--ink2);
+    border:1px solid var(--border2);
+    font-family:'DM Mono',monospace;font-size:11px;letter-spacing:.06em;
+    padding:10px 20px;border-radius:2px;opacity:0;
+    transition:all .3s;white-space:nowrap;z-index:300;
+    box-shadow:0 4px 20px rgba(0,0,0,.4);
+  }
   .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
   .screen{animation:fadeIn .22s ease;}
-  @keyframes fadeIn{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
   .hidden{display:none!important;}
-  .loading-screen{position:fixed;inset:0;background:var(--paper);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;z-index:500;}
+
+  /* ── ローディング ── */
+  .loading-screen{position:fixed;inset:0;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;z-index:500;}
   .loading-screen.hidden{display:none!important;}
-  .loading-title{font-size:22px;font-weight:600;letter-spacing:.05em;}
-  .loading-sub{font-family:'DM Mono',monospace;font-size:11px;color:rgba(26,26,24,.4);letter-spacing:.1em;}
-  .loading-spinner{width:28px;height:28px;border:2px solid var(--border);border-top-color:var(--blue);border-radius:50%;animation:spin .8s linear infinite;}
+  .loading-title{font-family:'Cormorant Garamond',serif;font-size:26px;font-weight:600;color:var(--gold2);letter-spacing:.1em;}
+  .loading-sub{font-family:'DM Mono',monospace;font-size:10px;color:var(--ink3);letter-spacing:.14em;}
+  .loading-spinner{width:28px;height:28px;border:1.5px solid var(--border2);border-top-color:var(--gold);border-radius:50%;animation:spin .9s linear infinite;}
   @keyframes spin{to{transform:rotate(360deg);}}
-  .modal-overlay{position:fixed;inset:0;background:rgba(26,26,24,.55);backdrop-filter:blur(2px);z-index:200;display:flex;align-items:flex-end;justify-content:center;animation:overlayIn .2s ease;}
+
+  /* ── モーダル ── */
+  .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);backdrop-filter:blur(4px);z-index:200;display:flex;align-items:flex-end;justify-content:center;animation:overlayIn .2s ease;}
   .modal-overlay.hidden{display:none!important;}
   @keyframes overlayIn{from{opacity:0;}to{opacity:1;}}
-  .modal-sheet{background:var(--paper);width:100%;max-width:480px;border-radius:12px 12px 0 0;padding:28px 24px 44px;animation:sheetUp .26s cubic-bezier(.16,1,.3,1);max-height:92vh;overflow-y:auto;}
+  .modal-sheet{background:var(--surface);width:100%;max-width:480px;border-radius:8px 8px 0 0;padding:28px 24px 48px;animation:sheetUp .28s cubic-bezier(.16,1,.3,1);max-height:92vh;overflow-y:auto;border-top:1px solid var(--border2);}
   @keyframes sheetUp{from{transform:translateY(100%);}to{transform:translateY(0);}}
-  .modal-handle{width:36px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 24px;}
-  .modal-title{font-size:17px;font-weight:600;margin-bottom:4px;letter-spacing:.03em;}
-  .modal-sub{font-family:'DM Mono',monospace;font-size:11px;color:rgba(26,26,24,.4);margin-bottom:20px;letter-spacing:.06em;}
-  #qr-reader{width:100%;border-radius:8px;overflow:hidden;margin-bottom:12px;background:#000;}
-  #qr-reader__scan_region{border-radius:8px;overflow:hidden;}
+  .modal-handle{width:32px;height:3px;background:var(--border2);border-radius:2px;margin:0 auto 24px;}
+  .modal-title{font-family:'Cormorant Garamond',serif;font-size:20px;font-weight:600;margin-bottom:4px;letter-spacing:.05em;color:var(--ink);}
+  .modal-sub{font-family:'DM Mono',monospace;font-size:10px;color:var(--ink3);margin-bottom:20px;letter-spacing:.08em;}
+
+  /* ── スキャナー ── */
+  #qr-reader{width:100%;border-radius:6px;overflow:hidden;margin-bottom:12px;background:#000;}
+  #qr-reader__scan_region{border-radius:6px;overflow:hidden;}
   #qr-reader__dashboard{padding:8px 0 0!important;background:transparent!important;border:none!important;}
   #qr-reader__dashboard_section_swaplink{display:none!important;}
-  #qr-reader__status_span{font-family:'DM Mono',monospace!important;font-size:11px!important;color:rgba(26,26,24,.5)!important;}
-  #qr-reader__camera_selection{width:100%!important;padding:8px 10px!important;border:1px solid var(--border)!important;border-radius:3px!important;font-family:'Noto Serif JP',serif!important;font-size:13px!important;background:white!important;margin-bottom:8px!important;outline:none!important;}
-  #qr-reader__camera_permission_button,#html5-qrcode-button-camera-start,#html5-qrcode-button-camera-stop{padding:10px 0!important;width:100%!important;border:none!important;border-radius:3px!important;font-family:'Noto Serif JP',serif!important;font-size:14px!important;font-weight:600!important;cursor:pointer!important;background:var(--blue)!important;color:white!important;margin:4px 0!important;}
-  #html5-qrcode-button-camera-stop{background:var(--cream)!important;color:var(--ink)!important;border:1px solid var(--border)!important;}
+  #qr-reader__status_span{font-family:'DM Mono',monospace!important;font-size:10px!important;color:var(--ink3)!important;}
+  #qr-reader__camera_selection{width:100%!important;padding:8px 10px!important;border:1px solid var(--border2)!important;border-radius:2px!important;font-family:'Noto Serif JP',serif!important;font-size:13px!important;background:var(--surface2)!important;color:var(--ink)!important;margin-bottom:8px!important;outline:none!important;}
+  #qr-reader__camera_permission_button,#html5-qrcode-button-camera-start,#html5-qrcode-button-camera-stop{padding:10px 0!important;width:100%!important;border:none!important;border-radius:2px!important;font-family:'Noto Serif JP',serif!important;font-size:14px!important;font-weight:600!important;cursor:pointer!important;background:var(--gold)!important;color:#0f1117!important;margin:4px 0!important;}
+  #html5-qrcode-button-camera-stop{background:var(--surface2)!important;color:var(--ink2)!important;border:1px solid var(--border2)!important;}
   #html5-qrcode-button-file-selection{display:none!important;}
-  .scanner-stopped{display:none;width:100%;aspect-ratio:4/3;background:#111;border-radius:8px;margin-bottom:12px;align-items:center;justify-content:center;flex-direction:column;gap:8px;color:rgba(255,255,255,.5);font-family:'DM Mono',monospace;font-size:12px;letter-spacing:.06em;}
+
+  .scanner-stopped{display:none;width:100%;aspect-ratio:4/3;background:#0a0c12;border-radius:6px;margin-bottom:12px;align-items:center;justify-content:center;flex-direction:column;gap:10px;color:var(--ink3);font-family:'DM Mono',monospace;font-size:11px;letter-spacing:.08em;border:1px solid var(--border);}
   .scanner-stopped.active{display:flex;}
-  .scanner-status{text-align:center;font-family:'DM Mono',monospace;font-size:12px;color:rgba(26,26,24,.5);letter-spacing:.06em;margin-bottom:14px;min-height:18px;}
-  .scanner-status.found{color:var(--green);font-weight:500;}
+  .scanner-stopped .check{font-size:32px;color:var(--gold);}
+
+  .scanner-status{text-align:center;font-family:'DM Mono',monospace;font-size:11px;color:var(--ink3);letter-spacing:.06em;margin-bottom:14px;min-height:18px;}
+  .scanner-status.found{color:var(--gold);}
   .scanner-status.error{color:var(--red);}
-  .book-preview{display:none;align-items:center;gap:16px;padding:16px;background:white;border:1px solid var(--border);border-radius:6px;margin-bottom:16px;box-shadow:0 1px 4px var(--shadow);}
+
+  /* ── 書誌プレビュー ── */
+  .book-preview{display:none;align-items:center;gap:16px;padding:16px;background:var(--surface2);border:1px solid var(--border2);border-radius:4px;margin-bottom:16px;}
   .book-preview.active{display:flex;}
-  .preview-cover{width:56px;height:78px;border-radius:3px;border:1px solid var(--border);flex-shrink:0;overflow:hidden;background:var(--cream);display:flex;align-items:center;justify-content:center;font-size:24px;cursor:pointer;position:relative;}
+  .preview-cover{width:52px;height:72px;border-radius:2px;border:1px solid var(--border2);flex-shrink:0;overflow:hidden;background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:22px;cursor:pointer;position:relative;box-shadow:3px 3px 10px rgba(0,0,0,.4);}
   .preview-cover img,.preview-cover svg{width:100%;height:100%;object-fit:cover;}
-  .preview-cover-hint{position:absolute;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .2s;border-radius:3px;}
+  .preview-cover-hint{position:absolute;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .2s;border-radius:2px;}
   .preview-cover:hover .preview-cover-hint{opacity:1;}
   .preview-cover-hint span{font-size:16px;}
   .preview-info{flex:1;min-width:0;}
-  .preview-title{font-size:14px;font-weight:600;line-height:1.4;margin-bottom:4px;}
-  .preview-author{font-family:'DM Mono',monospace;font-size:11px;color:rgba(26,26,24,.5);margin-bottom:4px;}
-  .preview-isbn{font-family:'DM Mono',monospace;font-size:10px;color:rgba(26,26,24,.3);letter-spacing:.04em;}
+  .preview-title{font-size:13px;font-weight:600;line-height:1.4;margin-bottom:4px;color:var(--ink);}
+  .preview-author{font-family:'DM Mono',monospace;font-size:10px;color:var(--ink3);margin-bottom:3px;}
+  .preview-isbn{font-family:'DM Mono',monospace;font-size:9px;color:var(--ink3);letter-spacing:.04em;}
+
+  /* ── ルックアップ中 ── */
+  .lookup-state{display:none;align-items:center;gap:10px;padding:12px 16px;background:var(--surface2);border:1px solid var(--border);border-radius:3px;margin-bottom:16px;font-family:'DM Mono',monospace;font-size:11px;color:var(--ink3);letter-spacing:.06em;}
+  .lookup-state.active{display:flex;}
+  .spinner{width:14px;height:14px;border:1.5px solid var(--border2);border-top-color:var(--gold);border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0;}
+
+  /* ── 写真撮影 ── */
   .photo-capture-area{display:none;flex-direction:column;gap:8px;margin-bottom:16px;}
   .photo-capture-area.active{display:flex;}
-  .photo-capture-btn{display:flex;align-items:center;justify-content:center;gap:8px;padding:12px 0;border:1.5px dashed var(--border);border-radius:4px;background:transparent;font-family:'DM Mono',monospace;font-size:12px;color:rgba(26,26,24,.4);letter-spacing:.1em;cursor:pointer;transition:all .18s;width:100%;}
-  .photo-capture-btn:hover{border-color:var(--blue);color:var(--blue);background:rgba(60,110,139,.04);}
-  .photo-preview-wrap{position:relative;width:100%;aspect-ratio:3/4;max-height:200px;border-radius:6px;overflow:hidden;border:1px solid var(--border);display:none;}
+  .photo-capture-btn{display:flex;align-items:center;justify-content:center;gap:8px;padding:12px 0;border:1px dashed rgba(201,168,76,.2);border-radius:3px;background:transparent;font-family:'DM Mono',monospace;font-size:11px;color:rgba(201,168,76,.4);letter-spacing:.1em;cursor:pointer;transition:all .18s;width:100%;}
+  .photo-capture-btn:hover{border-color:var(--gold);color:var(--gold);background:rgba(201,168,76,.04);}
+  .photo-preview-wrap{position:relative;width:100%;aspect-ratio:3/4;max-height:200px;border-radius:4px;overflow:hidden;border:1px solid var(--border2);display:none;}
   .photo-preview-wrap.active{display:block;}
   .photo-preview-img{width:100%;height:100%;object-fit:cover;}
-  .photo-clear-btn{position:absolute;top:6px;right:6px;padding:4px 10px;background:rgba(26,26,24,.7);color:white;border:none;border-radius:2px;font-family:'DM Mono',monospace;font-size:10px;cursor:pointer;letter-spacing:.06em;}
-  .photo-uploading{position:absolute;inset:0;background:rgba(26,26,24,.6);display:none;align-items:center;justify-content:center;flex-direction:column;gap:8px;border-radius:6px;}
+  .photo-clear-btn{position:absolute;top:6px;right:6px;padding:4px 10px;background:rgba(0,0,0,.7);color:var(--ink2);border:none;border-radius:2px;font-family:'DM Mono',monospace;font-size:10px;cursor:pointer;letter-spacing:.06em;}
+  .photo-uploading{position:absolute;inset:0;background:rgba(0,0,0,.7);display:none;align-items:center;justify-content:center;flex-direction:column;gap:8px;}
   .photo-uploading.active{display:flex;}
-  .photo-uploading span{font-family:'DM Mono',monospace;font-size:11px;color:white;letter-spacing:.06em;}
+  .photo-uploading span{font-family:'DM Mono',monospace;font-size:10px;color:var(--ink2);letter-spacing:.08em;}
   #photo-file-input{display:none;}
-  .lookup-state{display:none;align-items:center;gap:10px;padding:12px 16px;background:white;border:1px solid var(--border);border-radius:4px;margin-bottom:16px;font-family:'DM Mono',monospace;font-size:12px;color:rgba(26,26,24,.5);letter-spacing:.06em;}
-  .lookup-state.active{display:flex;}
-  .spinner{width:16px;height:16px;border:2px solid var(--border);border-top-color:var(--blue);border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0;}
-  .divider-text{display:flex;align-items:center;gap:10px;margin:12px 0 10px;font-family:'DM Mono',monospace;font-size:10px;color:rgba(26,26,24,.3);letter-spacing:.1em;}
+
+  .divider-text{display:flex;align-items:center;gap:10px;margin:14px 0 12px;font-family:'DM Mono',monospace;font-size:9px;color:var(--ink3);letter-spacing:.14em;text-transform:uppercase;}
   .divider-text::before,.divider-text::after{content:'';flex:1;border-top:1px solid var(--border);}
+
   .manual-input-area{display:flex;flex-direction:column;gap:10px;margin-bottom:16px;}
-  .field-group{display:flex;flex-direction:column;gap:5px;}
-  .field-label{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:rgba(26,26,24,.4);}
-  .field-input{width:100%;padding:10px 14px;border:1px solid var(--border);border-radius:3px;font-family:'Noto Serif JP',serif;font-size:14px;background:white;color:var(--ink);outline:none;transition:border-color .15s;}
-  .field-input:focus{border-color:var(--blue);}
-  .rescan-btn{display:none;width:100%;padding:11px 0;border:1.5px dashed var(--border);border-radius:4px;background:transparent;font-family:'DM Mono',monospace;font-size:12px;color:rgba(26,26,24,.4);letter-spacing:.1em;cursor:pointer;margin-bottom:14px;transition:all .18s;}
+  .field-group{display:flex;flex-direction:column;gap:6px;}
+  .field-label{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink3);}
+  .field-input{width:100%;padding:10px 14px;border:1px solid var(--border2);border-radius:2px;font-family:'Noto Serif JP',serif;font-size:14px;background:var(--surface2);color:var(--ink);outline:none;transition:border-color .15s;}
+  .field-input:focus{border-color:var(--gold);}
+  .field-input::placeholder{color:var(--ink3);}
+
+  .rescan-btn{display:none;width:100%;padding:11px 0;border:1px dashed rgba(201,168,76,.2);border-radius:3px;background:transparent;font-family:'DM Mono',monospace;font-size:11px;color:rgba(201,168,76,.4);letter-spacing:.1em;cursor:pointer;margin-bottom:14px;transition:all .18s;}
   .rescan-btn.active{display:block;}
-  .rescan-btn:hover{border-color:var(--blue);color:var(--blue);}
+  .rescan-btn:hover{border-color:var(--gold);color:var(--gold);}
+
+  /* ── 管理画面 ── */
   .mgmt-section{margin-bottom:32px;}
-  .mgmt-section-title{font-size:15px;font-weight:600;margin-bottom:14px;display:flex;align-items:center;gap:8px;}
-  .owner-row{display:flex;align-items:center;gap:12px;padding:14px 16px;background:white;border:1px solid var(--border);border-radius:4px;margin-bottom:8px;box-shadow:0 1px 3px var(--shadow);}
+  .mgmt-section-title{font-family:'Cormorant Garamond',serif;font-size:18px;font-weight:600;margin-bottom:16px;color:var(--gold2);letter-spacing:.05em;}
+  .owner-row{display:flex;align-items:center;gap:12px;padding:14px 16px;background:var(--surface);border:1px solid var(--border);border-radius:3px;margin-bottom:8px;}
   .owner-row-emoji{font-size:20px;}
-  .owner-row-name{flex:1;font-size:15px;font-weight:600;}
-  .owner-row-count{font-family:'DM Mono',monospace;font-size:11px;color:rgba(26,26,24,.4);margin-right:4px;}
-  .owner-row-del{padding:5px 12px;border:1px solid rgba(139,58,58,.25);border-radius:3px;background:none;color:var(--red);font-family:'DM Mono',monospace;font-size:11px;cursor:pointer;transition:all .15s;}
-  .owner-row-del:hover{background:rgba(139,58,58,.08);}
-  .owner-row-del:disabled{opacity:.3;cursor:not-allowed;}
+  .owner-row-name{flex:1;font-size:15px;font-weight:600;color:var(--ink);}
+  .owner-row-count{font-family:'DM Mono',monospace;font-size:10px;color:var(--ink3);margin-right:4px;}
+  .owner-row-del{padding:5px 12px;border:1px solid rgba(192,82,74,.2);border-radius:2px;background:none;color:rgba(192,82,74,.5);font-family:'DM Mono',monospace;font-size:10px;cursor:pointer;transition:all .15s;}
+  .owner-row-del:hover{background:rgba(192,82,74,.08);color:var(--red);}
+  .owner-row-del:disabled{opacity:.25;cursor:not-allowed;}
   .add-owner-form{display:flex;gap:10px;margin-top:14px;}
-  .add-owner-input{flex:1;padding:10px 14px;border:1px solid var(--border);border-radius:3px;font-family:'Noto Serif JP',serif;font-size:14px;background:white;color:var(--ink);outline:none;transition:border-color .15s;}
-  .add-owner-input:focus{border-color:var(--blue);}
-  .add-owner-btn{padding:10px 18px;border:none;border-radius:3px;background:var(--blue);color:white;font-family:'Noto Serif JP',serif;font-size:14px;font-weight:600;cursor:pointer;transition:background .15s;white-space:nowrap;}
-  .add-owner-btn:hover{background:#2e5a73;}
-  .confirm-overlay{position:fixed;inset:0;background:rgba(26,26,24,.6);backdrop-filter:blur(2px);z-index:400;display:flex;align-items:center;justify-content:center;padding:24px;}
+  .add-owner-input{flex:1;padding:10px 14px;border:1px solid var(--border2);border-radius:2px;font-family:'Noto Serif JP',serif;font-size:14px;background:var(--surface2);color:var(--ink);outline:none;transition:border-color .15s;}
+  .add-owner-input:focus{border-color:var(--gold);}
+  .add-owner-input::placeholder{color:var(--ink3);}
+  .add-owner-btn{padding:10px 18px;border:none;border-radius:2px;background:var(--gold);color:#0f1117;font-family:'Noto Serif JP',serif;font-size:14px;font-weight:600;cursor:pointer;transition:background .15s;white-space:nowrap;}
+  .add-owner-btn:hover{background:var(--gold2);}
+
+  /* ── 確認ダイアログ ── */
+  .confirm-overlay{position:fixed;inset:0;background:rgba(0,0,0,.8);backdrop-filter:blur(4px);z-index:400;display:flex;align-items:center;justify-content:center;padding:24px;}
   .confirm-overlay.hidden{display:none!important;}
-  .confirm-box{background:var(--paper);border-radius:8px;padding:28px 24px;max-width:360px;width:100%;box-shadow:0 8px 32px rgba(26,26,24,.2);animation:fadeIn .18s ease;}
-  .confirm-title{font-size:16px;font-weight:600;margin-bottom:10px;}
-  .confirm-body{font-size:14px;color:rgba(26,26,24,.65);line-height:1.7;margin-bottom:24px;}
+  .confirm-box{background:var(--surface);border:1px solid var(--border2);border-radius:6px;padding:30px 26px;max-width:360px;width:100%;box-shadow:0 12px 48px rgba(0,0,0,.5);animation:fadeIn .18s ease;}
+  .confirm-title{font-family:'Cormorant Garamond',serif;font-size:18px;font-weight:600;margin-bottom:10px;color:var(--ink);}
+  .confirm-body{font-size:13px;color:var(--ink3);line-height:1.8;margin-bottom:26px;}
   .confirm-btns{display:flex;gap:10px;}
+
   /* ── 操作結果ポップアップ ── */
-  .result-overlay{position:fixed;inset:0;background:rgba(26,26,24,.5);backdrop-filter:blur(2px);z-index:600;display:flex;align-items:center;justify-content:center;padding:24px;animation:overlayIn .18s ease;}
+  .result-overlay{position:fixed;inset:0;background:rgba(0,0,0,.8);backdrop-filter:blur(4px);z-index:600;display:flex;align-items:center;justify-content:center;padding:24px;animation:overlayIn .18s ease;}
   .result-overlay.hidden{display:none!important;}
-  .result-box{background:white;border-radius:8px;padding:32px 28px;max-width:320px;width:100%;text-align:center;box-shadow:0 8px 32px rgba(26,26,24,.2);animation:fadeIn .2s ease;}
+  .result-box{background:var(--surface);border:1px solid var(--border2);border-radius:6px;padding:36px 28px;max-width:300px;width:100%;text-align:center;box-shadow:0 12px 48px rgba(0,0,0,.5);animation:fadeIn .2s ease;}
   .result-icon{font-size:40px;margin-bottom:16px;line-height:1;}
-  .result-title{font-size:17px;font-weight:600;margin-bottom:8px;letter-spacing:.03em;}
-  .result-body{font-family:'DM Mono',monospace;font-size:12px;color:rgba(26,26,24,.5);letter-spacing:.06em;line-height:1.7;margin-bottom:24px;white-space:pre-line;}
-  .result-btn{width:100%;padding:13px 0;border:none;border-radius:3px;font-family:'Noto Serif JP',serif;font-size:14px;font-weight:600;cursor:pointer;transition:all .16s;}
-  .result-btn.ok{background:var(--blue);color:white;}
-  .result-btn.ok:hover{background:#2e5a73;}
-  .result-btn.warn{background:var(--cream);color:var(--ink);border:1px solid var(--border);}
-  .result-btn.warn:hover{background:#e0dbd0;}
+  .result-title{font-family:'Cormorant Garamond',serif;font-size:20px;font-weight:600;margin-bottom:8px;color:var(--gold2);}
+  .result-body{font-family:'DM Mono',monospace;font-size:11px;color:var(--ink3);letter-spacing:.06em;line-height:1.8;margin-bottom:26px;white-space:pre-line;}
+  .result-btn{width:100%;padding:13px 0;border:none;border-radius:2px;font-family:'Noto Serif JP',serif;font-size:14px;font-weight:600;cursor:pointer;transition:all .16s;}
+  .result-btn.ok{background:var(--gold);color:#0f1117;}
+  .result-btn.ok:hover{background:var(--gold2);}
+  .result-btn.warn{background:transparent;color:var(--ink2);border:1px solid var(--border2);}
+  .result-btn.warn:hover{border-color:var(--ink2);}
 </style>
 </head>
 <body>
@@ -187,14 +291,14 @@
 <div class="loading-screen" id="loading-screen">
   <div class="loading-spinner"></div>
   <div class="loading-title">図書貸出</div>
-  <div class="loading-sub">データを読み込み中…</div>
+  <div class="loading-sub">Loading library…</div>
 </div>
 
 <div class="app-wrap">
   <header class="header">
     <div class="header-left">
       <div class="header-title">図書貸出</div>
-      <div class="header-sub">Book Lending</div>
+      <div class="header-sub">Book Lending System</div>
     </div>
     <div class="header-right">
       <button class="sync-btn" id="sync-btn" onclick="syncAll()">↑↓ 同期</button>
@@ -202,15 +306,16 @@
     </div>
   </header>
   <div class="breadcrumb" id="breadcrumb"></div>
+
   <div id="screen-owners" class="screen">
     <div class="section-label">持ち主を選択</div>
     <div id="owner-list"></div>
   </div>
   <div id="screen-books" class="screen hidden">
-    <div class="section-label" id="books-label"></div>
+    <div class="section-label" id="books-label-wrap">蔵書一覧</div>
     <div id="book-list"></div>
     <button class="add-book-bar" onclick="openRegisterModal()">
-      <span style="font-size:16px">📷</span>
+      <span style="font-size:15px">📷</span>
       <span>バーコードをスキャンして登録</span>
     </button>
     <button class="btn-back" onclick="backToOwners()">← 持ち主一覧</button>
@@ -221,7 +326,7 @@
   </div>
   <div id="screen-mgmt" class="screen hidden">
     <div class="mgmt-section">
-      <div class="mgmt-section-title">👤 所有者の管理</div>
+      <div class="mgmt-section-title">所有者の管理</div>
       <div id="mgmt-owner-list"></div>
       <div class="add-owner-form">
         <input class="add-owner-input" id="new-owner-input" type="text" placeholder="新しい所有者名…" maxlength="20">
@@ -234,6 +339,7 @@
 
 <div class="toast" id="toast"></div>
 
+<!-- 本登録モーダル -->
 <div class="modal-overlay hidden" id="register-modal">
   <div class="modal-sheet">
     <div class="modal-handle"></div>
@@ -242,7 +348,7 @@
     <div>
       <div id="qr-reader"></div>
       <div class="scanner-stopped" id="scanner-stopped">
-        <span style="font-size:28px">✓</span>
+        <span class="check">✦</span>
         <span id="scanner-stopped-msg">スキャン完了</span>
       </div>
     </div>
@@ -264,7 +370,7 @@
     </div>
     <div class="photo-capture-area" id="photo-capture-area">
       <button class="photo-capture-btn" onclick="document.getElementById('photo-file-input').click()">
-        <span style="font-size:15px">📷</span>
+        <span style="font-size:14px">📷</span>
         <span>表紙を写真で撮影（任意）</span>
       </button>
       <div class="photo-preview-wrap" id="photo-preview-wrap">
@@ -295,6 +401,7 @@
   </div>
 </div>
 
+<!-- 削除確認 -->
 <div class="confirm-overlay hidden" id="confirm-overlay">
   <div class="confirm-box">
     <div class="confirm-title" id="confirm-title"></div>
@@ -464,7 +571,7 @@ function renderOwners(){
 }
 function selectOwner(name){
   currentOwner=name;showScreen("screen-books");
-  document.getElementById("books-label").textContent=name+" の蔵書";
+  document.getElementById("books-label-wrap").textContent=name+" の蔵書";
   renderBooks();
   updateBreadcrumb([{label:"持ち主一覧",action:"backToOwners()"},{label:name}]);
 }
@@ -504,7 +611,7 @@ function renderDetail(){
       <span class="badge ${ok?"available":"borrowed"}">${ok?"貸出可":"貸出中"}</span>
     </div>
     ${!ok?`<div class="detail-row"><span class="detail-label">借りている人</span><span class="detail-value">${b.borrower}</span></div>`:""}
-    ${b.isbn?`<div class="detail-row"><span class="detail-label">ISBN</span><span style="font-family:'DM Mono',monospace;font-size:12px">${b.isbn}</span></div>`:""}
+    ${b.isbn?`<div class="detail-row"><span class="detail-label">ISBN</span><span style="font-family:'DM Mono',monospace;font-size:11px;color:var(--ink3)">${b.isbn}</span></div>`:""}
     <div class="input-wrap ${ok?"visible":""}" id="borrower-input-wrap">
       <div class="input-label">借りる人の名前</div>
       <input class="input-field" id="borrower-name" type="text" placeholder="名前を入力…" maxlength="20">
@@ -531,14 +638,8 @@ async function borrowBook(){
   b.status="borrowed";b.borrower=name;
   renderDetail();renderBooks();
   showResult("📖","貸出しました",`「${b.title}」を\n${name} さんに貸出しました`);
-  // 貸出履歴を追記
   const today=new Date().toISOString().slice(0,10);
-  gasPost({action:"saveLoans",loans:[{
-    bookId:   b.id,
-    borrower: name,
-    loanDate: today,
-    returnDate: ""
-  }]});
+  gasPost({action:"saveLoans",loans:[{bookId:b.id,borrower:name,loanDate:today,returnDate:""}]});
   saveAll();
 }
 
@@ -548,14 +649,8 @@ async function returnBook(){
   b.status="available";b.borrower="";
   renderDetail();renderBooks();
   showResult("✅","返却されました",`「${b.title}」が\n${borrower?borrower+" さんから":""}返却されました`);
-  // 返却日を追記
   const today=new Date().toISOString().slice(0,10);
-  gasPost({action:"saveLoans",loans:[{
-    bookId:    b.id,
-    borrower:  borrower,
-    loanDate:  "",
-    returnDate: today
-  }]});
+  gasPost({action:"saveLoans",loans:[{bookId:b.id,borrower:borrower,loanDate:"",returnDate:today}]});
   saveAll();
 }
 
@@ -647,7 +742,6 @@ function setStatus(msg,cls){
   const el=document.getElementById("scanner-status");
   el.textContent=msg;el.className="scanner-status"+(cls?" "+cls:"");
 }
-
 async function openRegisterModal(){
   resetModal();
   document.getElementById("register-modal").classList.remove("hidden");
@@ -706,7 +800,6 @@ function onScanSuccess(text){
   }).catch(()=>{fetchBookInfo(text);});
 }
 
-/* ════ 書誌情報取得 ＋ SVGカバー生成 ════ */
 async function fetchBookInfo(isbn){
   setStatus("書誌情報を取得中…","found");
   document.getElementById("lookup-state").classList.add("active");
@@ -729,7 +822,7 @@ async function fetchBookInfo(isbn){
     document.getElementById("lookup-state").classList.remove("active");
     pendingBook={title,author,isbn,coverImage};
     showPreview(pendingBook);
-    setStatus(`「${title}」を取得しました ✓`,"found");
+    setStatus(`「${title}」を取得しました ✦`,"found");
     document.getElementById("modal-sub").textContent="内容を確認して登録してください";
     document.getElementById("rescan-btn").classList.add("active");
     document.getElementById("photo-capture-area").classList.add("active");
@@ -760,7 +853,6 @@ function showPreview(book){
   document.getElementById("manual-author").value=book.author||"";
 }
 
-/* ════ 写真撮影 → Driveアップロード ════ */
 async function onPhotoSelected(event){
   const file=event.target.files[0];
   if(!file)return;
@@ -792,8 +884,7 @@ async function onPhotoSelected(event){
       }catch(err){
         document.getElementById("photo-uploading").classList.remove("active");
         showToast("アップロード失敗：写真なしで登録されます");
-        capturedPhotoDataUrl=null;
-        syncBtn();
+        capturedPhotoDataUrl=null;syncBtn();
       }
     };
     img.src=dataUrl;
@@ -809,7 +900,6 @@ function clearPhoto(){
   if(pendingBook&&scannedIsbn){fetchBookInfo(scannedIsbn);}
 }
 
-/* ════ 登録確定 ════ */
 async function confirmRegister(){
   const title=document.getElementById("manual-title").value.trim()||pendingBook?.title||"";
   const author=document.getElementById("manual-author").value.trim()||pendingBook?.author||"";
@@ -819,11 +909,8 @@ async function confirmRegister(){
   document.getElementById("register-confirm-btn").disabled=true;
   document.getElementById("register-confirm-btn").textContent="保存中…";
   books.push({id:Date.now(),owner:currentOwner,title,author,isbn,coverImage:cover,emoji:"📖",status:"available",borrower:""});
-  closeRegisterModal();
-  renderBooks();
-  // ポップアップを即座に表示
+  closeRegisterModal();renderBooks();
   showResult("📚","登録しました",`「${title}」を\n${currentOwner} の蔵書に登録しました`);
-  // 保存はバックグラウンドで実行
   saveAll();
 }
 
@@ -857,14 +944,13 @@ window.addEventListener("popstate",(e)=>{
       showScreen("screen-owners",false);renderOwners();break;
     case "screen-books":
       showScreen("screen-books",false);
-      document.getElementById("books-label").textContent=currentOwner+" の蔵書";
+      document.getElementById("books-label-wrap").textContent=currentOwner+" の蔵書";
       renderBooks();
       updateBreadcrumb([{label:"持ち主一覧",action:"backToOwners()"},{label:currentOwner}]);
       break;
     case "screen-detail":
       if(!currentBookId){showScreen("screen-books",false);renderBooks();return;}
-      showScreen("screen-detail",false);
-      renderDetail();
+      showScreen("screen-detail",false);renderDetail();
       const b=books.find(x=>x.id===currentBookId);
       if(b)updateBreadcrumb([
         {label:"持ち主一覧",action:"backToOwners()"},
@@ -875,11 +961,9 @@ window.addEventListener("popstate",(e)=>{
     case "screen-mgmt":
       showScreen("screen-mgmt",false);
       updateBreadcrumb([{label:"持ち主一覧",action:"backToOwners()"},{label:"管理"}]);
-      renderMgmt();
-      break;
+      renderMgmt();break;
   }
 });
-
 function getCurrentScreen(){
   return["screen-owners","screen-books","screen-detail","screen-mgmt"].find(s=>!document.getElementById(s).classList.contains("hidden"))||"screen-owners";
 }
