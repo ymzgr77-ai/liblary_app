@@ -530,9 +530,15 @@ async function borrowBook(){
   const b=books.find(x=>x.id===currentBookId);
   b.status="borrowed";b.borrower=name;
   renderDetail();renderBooks();
-  // ポップアップを即座に表示
   showResult("📖","貸出しました",`「${b.title}」を\n${name} さんに貸出しました`);
-  // 保存はバックグラウンドで実行
+  // 貸出履歴を追記
+  const today=new Date().toISOString().slice(0,10);
+  gasPost({action:"saveLoans",loans:[{
+    bookId:   b.id,
+    borrower: name,
+    loanDate: today,
+    returnDate: ""
+  }]});
   saveAll();
 }
 
@@ -541,9 +547,15 @@ async function returnBook(){
   const borrower=b.borrower;
   b.status="available";b.borrower="";
   renderDetail();renderBooks();
-  // ポップアップを即座に表示
   showResult("✅","返却されました",`「${b.title}」が\n${borrower?borrower+" さんから":""}返却されました`);
-  // 保存はバックグラウンドで実行
+  // 返却日を追記
+  const today=new Date().toISOString().slice(0,10);
+  gasPost({action:"saveLoans",loans:[{
+    bookId:    b.id,
+    borrower:  borrower,
+    loanDate:  "",
+    returnDate: today
+  }]});
   saveAll();
 }
 
