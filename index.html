@@ -335,6 +335,8 @@ async function init(){
   localStorage.setItem("lending_books",JSON.stringify(books));
   document.getElementById("loading-screen").classList.add("hidden");
   renderOwners();
+  // 初期状態を履歴に積む
+  history.replaceState({screen:"screen-owners", owner:"", bookId:null}, "", "");
 }
 
 async function saveAll(){
@@ -402,11 +404,14 @@ function showToast(msg){
   t.textContent=msg;t.classList.add("show");
   clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove("show"),2600);
 }
-function showScreen(id){
+function showScreen(id, pushHistory=true){
   ["screen-owners","screen-books","screen-detail","screen-mgmt"].forEach(s=>{
     const el=document.getElementById(s);el.classList.add("hidden");el.classList.remove("screen");
   });
   const t=document.getElementById(id);t.classList.remove("hidden");void t.offsetWidth;t.classList.add("screen");
+  if(pushHistory){
+    history.pushState({screen:id, owner:currentOwner, bookId:currentBookId}, "", "");
+  }
 }
 
 /* ════ 画面1 ════ */
@@ -776,6 +781,65 @@ async function confirmRegister(){
 /* ════ 初期化 ════ */
 init();
 document.getElementById("new-owner-input").addEventListener("keydown",e=>{if(e.key==="Enter")addOwner();});
+
+// スマホ戻るボタン対応
+window.addEventListener("popstate", (e)=>{
+  // モーダルが開いていれば閉じる
+  if(!document.getElementById("register-modal").classList.contains("hidden")){
+    closeRegisterModal();
+    return;
+  }
+  if(!document.getElementById("confirm-overlay").classList.contains("hidden")){
+    closeConfirm();
+    return;
+  }
+
+  const state = e.state;
+  if(!state){
+    // 履歴がない場合は所有者一覧に戻る
+    showScreen("screen-owners", false);
+    renderOwners();
+    return;
+  }
+
+  // 状態を復元
+  currentOwner  = state.owner   || "";
+  currentBookId = state.bookId  || null;
+
+  switch(state.screen){
+    case "screen-owners":
+      showScreen("screen-owners", false);
+      renderOwners();
+      break;
+    case "screen-books":
+      showScreen("screen-books", false);
+      document.getElementById("books-label").textContent = currentOwner + " の蔵書";
+      renderBooks();
+      updateBreadcrumb([
+        {label:"持ち主一覧", action:"backToOwners()"},
+        {label: currentOwner}
+      ]);
+      break;
+    case "screen-detail":
+      showScreen("screen-detail", false);
+      renderDetail();
+      const b=books.find(x=>x.id===currentBookId);
+      if(b) updateBreadcrumb([
+        {label:"持ち主一覧", action:"backToOwners()"},
+        {label: currentOwner, action:"backToBooks()"},
+        {label: b.title}
+      ]);
+      break;
+    case "screen-mgmt":
+      showScreen("screen-mgmt", false);
+      updateBreadcrumb([
+        {label:"持ち主一覧", action:"backToOwners()"},
+        {label:"管理"}
+      ]);
+      renderMgmt();
+      break;
+  }
+});
 </script>
 </body>
 </html>
