@@ -287,18 +287,16 @@
   .result-btn.warn:hover{border-color:var(--ink2);}
 
   /* ════ ① トップヒーローアクション ════ */
-  .hero-actions{display:flex;gap:12px;margin-bottom:28px;}
   .hero-btn{
-    flex:1;display:flex;flex-direction:column;align-items:center;gap:8px;
-    padding:20px 0;background:var(--surface);
+    display:flex;align-items:center;justify-content:center;gap:14px;
+    width:100%;padding:22px 0;background:var(--surface);
     border:1px solid var(--border2);border-radius:4px;cursor:pointer;
-    font-family:'Noto Serif JP',serif;font-size:14px;font-weight:600;
-    color:var(--ink);transition:all .2s;letter-spacing:.05em;
+    font-family:'Noto Serif JP',serif;font-size:16px;font-weight:600;
+    color:var(--ink);transition:all .2s;letter-spacing:.06em;
+    margin-bottom:28px;
   }
   .hero-btn:hover{border-color:var(--gold);background:var(--surface2);color:var(--gold2);}
-  .hero-btn-icon{font-size:26px;line-height:1;}
-  .hero-btn-return{color:var(--ink2);}
-  .hero-btn-return:hover{color:var(--gold2);}
+  .hero-btn-icon{font-size:28px;line-height:1;}
 
   /* ════ ③ ランキングセクション ════ */
   .ranking-list{margin-bottom:28px;}
@@ -388,28 +386,24 @@
   </header>
   <div class="breadcrumb" id="breadcrumb"></div>
 
-  <!-- ════ 画面1: 持ち主一覧 + トップ ════ -->
-  <div id="screen-owners" class="screen">
-    <!-- ⑤ アクションボタン -->
-    <div class="hero-actions">
-      <button class="hero-btn" onclick="scrollToOwners()">
-        <span class="hero-btn-icon">📖</span>
-        <span>貸出する</span>
-      </button>
-      <button class="hero-btn hero-btn-return" onclick="scrollToOwners()">
-        <span class="hero-btn-icon">↩</span>
-        <span>返却する</span>
-      </button>
-    </div>
+  <!-- ════ 画面0: ホーム ════ -->
+  <div id="screen-home" class="screen">
+    <!-- ⑤ メインアクションボタン（1つ） -->
+    <button class="hero-btn" onclick="goToOwners()">
+      <span class="hero-btn-icon">📚</span>
+      <span>図書を借りる・返却する</span>
+    </button>
     <!-- ③ 今月のランキング -->
     <div id="ranking-section"></div>
     <!-- ⑤ 今週の一押し -->
     <div id="weekly-pick-section"></div>
-    <!-- 持ち主一覧 -->
-    <div id="owner-section">
-      <div class="section-label">持ち主を選択</div>
-      <div id="owner-list"></div>
-    </div>
+  </div>
+
+  <!-- ════ 画面1: 持ち主一覧 ════ -->
+  <div id="screen-owners" class="screen hidden">
+    <div class="section-label">持ち主を選択</div>
+    <div id="owner-list"></div>
+    <button class="btn-back" onclick="backToHome()">← ホーム</button>
   </div>
 
   <div id="screen-books" class="screen hidden">
@@ -583,8 +577,8 @@ async function init(){
   localStorage.setItem("lending_books",JSON.stringify(books));
   localStorage.setItem("lending_loans",JSON.stringify(loans));
   document.getElementById("loading-screen").classList.add("hidden");
-  renderOwners();
-  history.replaceState({screen:"screen-owners",owner:"",bookId:null},"","#screen-owners");
+  renderHome();
+  history.replaceState({screen:"screen-home",owner:"",bookId:null},"","#screen-home");
 }
 
 async function saveAll(){
@@ -655,17 +649,13 @@ function showToast(msg){
   clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove("show"),2600);
 }
 function showScreen(id,pushHistory=true){
-  ["screen-owners","screen-books","screen-detail","screen-mgmt"].forEach(s=>{
+  ["screen-home","screen-owners","screen-books","screen-detail","screen-mgmt"].forEach(s=>{
     const el=document.getElementById(s);el.classList.add("hidden");el.classList.remove("screen");
   });
   const t=document.getElementById(id);t.classList.remove("hidden");void t.offsetWidth;t.classList.add("screen");
   if(pushHistory){
     history.pushState({screen:id,owner:currentOwner,bookId:currentBookId},"","#"+id);
   }
-}
-function scrollToOwners(){
-  const el=document.getElementById("owner-section");
-  if(el)el.scrollIntoView({behavior:"smooth",block:"start"});
 }
 
 /* ════ 操作結果ポップアップ ════ */
@@ -813,10 +803,26 @@ function selectBookFromRanking(bookId){
   selectBook(bookId);
 }
 
+/* ════ 画面0: ホーム ════ */
+function renderHome(){
+  showScreen("screen-home",false);
+  updateBreadcrumb([]);
+  renderTopSection();
+}
+function goToOwners(){
+  showScreen("screen-owners");
+  renderOwners();
+}
+function backToHome(){
+  showScreen("screen-owners",false); // popstate用に履歴は維持しつつ
+  showScreen("screen-home");
+  renderHome();
+}
+
 /* ════ 画面1 ════ */
 function renderOwners(){
   const list=document.getElementById("owner-list");list.innerHTML="";
-  if(!owners.length){list.innerHTML='<div class="empty-state">所有者がいません<br>⚙ 管理から追加してください</div>';updateBreadcrumb([]);return;}
+  if(!owners.length){list.innerHTML='<div class="empty-state">所有者がいません<br>⚙ 管理から追加してください</div>';updateBreadcrumb([{label:"ホーム",action:"backToHome()"}]);return;}
   owners.forEach(o=>{
     const owned=books.filter(b=>b.owner===o.name);
     const borrow=owned.filter(b=>b.status==="borrowed").length;
@@ -824,14 +830,13 @@ function renderOwners(){
     div.innerHTML=`<div style="display:flex;align-items:center;gap:12px"><span style="font-size:22px">${o.emoji}</span><span class="owner-name">${o.name}</span></div><div style="display:flex;align-items:center;gap:8px"><span class="owner-count">${owned.length}冊${borrow>0?` · 貸出中${borrow}`:""}</span><span class="owner-arrow">›</span></div>`;
     div.onclick=()=>selectOwner(o.name);list.appendChild(div);
   });
-  updateBreadcrumb([]);
-  renderTopSection();
+  updateBreadcrumb([{label:"ホーム",action:"backToHome()"},{label:"持ち主一覧"}]);
 }
 function selectOwner(name){
   currentOwner=name;showScreen("screen-books");
   document.getElementById("books-label-wrap").textContent=name+" の蔵書";
   renderBooks();
-  updateBreadcrumb([{label:"持ち主一覧",action:"backToOwners()"},{label:name}]);
+  updateBreadcrumb([{label:"ホーム",action:"backToHome()"},{label:"持ち主一覧",action:"backToOwners()"},{label:name}]);
 }
 
 /* ════ 画面2 ════ */
@@ -848,7 +853,7 @@ function renderBooks(){
 function selectBook(id){
   currentBookId=id;showScreen("screen-detail");
   const b=books.find(x=>x.id===id);
-  updateBreadcrumb([{label:"持ち主一覧",action:"backToOwners()"},{label:currentOwner,action:"backToBooks()"},{label:b.title}]);
+  updateBreadcrumb([{label:"ホーム",action:"backToHome()"},{label:"持ち主一覧",action:"backToOwners()"},{label:currentOwner,action:"backToBooks()"},{label:b.title}]);
   renderDetail();
 }
 
@@ -908,24 +913,26 @@ function renderDetail(){
     ${loanTimeHtml}
     ${b.isbn?`<div class="detail-row"><span class="detail-label">ISBN</span><span style="font-family:'DM Mono',monospace;font-size:11px;color:var(--ink3)">${b.isbn}</span></div>`:""}
     ${ok?`
-      <div class="input-wrap visible" style="margin-top:14px">
-        <div class="input-label">✦ おすすめポイント（任意・持ち主向け）</div>
-        <textarea class="input-field" id="recommendation-input" rows="2" placeholder="この本の見どころを一言…" maxlength="200">${b.recommendation||""}</textarea>
-      </div>
-      <div class="input-wrap visible" id="borrower-input-wrap" style="margin-top:12px">
+      <div class="input-wrap visible" id="borrower-input-wrap" style="margin-top:14px">
         <div class="input-label">借りる人の名前</div>
         <input class="input-field" id="borrower-name" type="text" placeholder="名前を入力…" maxlength="20">
       </div>
-    `:`
-      <div class="input-wrap visible" style="margin-top:14px">
-        <div class="input-label">✎ 感想（任意・借りた人向け）</div>
-        <textarea class="input-field" id="review-input" rows="2" placeholder="読んだ感想を一言…" maxlength="200"></textarea>
-      </div>
-    `}
+    `:""}
     <div class="btn-group">
       <button class="btn btn-primary"   onclick="borrowBook()" ${!ok?"disabled":""}>借りる</button>
       <button class="btn btn-secondary" onclick="returnBook()" ${ ok?"disabled":""}>返却する</button>
     </div>
+    ${ok?`
+      <div class="input-wrap visible" style="margin-top:16px">
+        <div class="input-label">✦ おすすめポイント（任意・持ち主向け）</div>
+        <textarea class="input-field" id="recommendation-input" rows="2" placeholder="この本の見どころを一言…" maxlength="200">${b.recommendation||""}</textarea>
+      </div>
+    `:`
+      <div class="input-wrap visible" style="margin-top:16px">
+        <div class="input-label">✎ 感想（任意・借りた人向け）</div>
+        <textarea class="input-field" id="review-input" rows="2" placeholder="読んだ感想を一言…" maxlength="200"></textarea>
+      </div>
+    `}
     <div class="delete-zone">
       <button class="btn-delete-sm" onclick="deleteBook(${b.id})">この本を登録から削除する</button>
     </div>`;
@@ -988,7 +995,7 @@ function deleteBook(id){
 /* ════ 画面4：管理 ════ */
 function openMgmt(){
   showScreen("screen-mgmt");
-  updateBreadcrumb([{label:"持ち主一覧",action:"backToOwners()"},{label:"管理"}]);
+  updateBreadcrumb([{label:"ホーム",action:"backToHome()"},{label:"持ち主一覧",action:"backToOwners()"},{label:"管理"}]);
   renderMgmt();
 }
 function renderMgmt(){
@@ -1032,7 +1039,7 @@ document.getElementById("confirm-ok-btn").onclick=()=>{if(_cb)_cb();closeConfirm
 function backToOwners(){showScreen("screen-owners");renderOwners();}
 function backToBooks(){
   showScreen("screen-books");renderBooks();
-  updateBreadcrumb([{label:"持ち主一覧",action:"backToOwners()"},{label:currentOwner}]);
+  updateBreadcrumb([{label:"ホーム",action:"backToHome()"},{label:"持ち主一覧",action:"backToOwners()"},{label:currentOwner}]);
 }
 
 /* ════ スキャナー ════ */
@@ -1259,23 +1266,26 @@ window.addEventListener("popstate",(e)=>{
     return;
   }
   const state=e.state;
-  if(!state){showScreen("screen-owners",false);renderOwners();return;}
+  if(!state){renderHome();return;}
   currentOwner=state.owner||"";
   currentBookId=state.bookId||null;
   switch(state.screen){
+    case "screen-home":
+      renderHome();break;
     case "screen-owners":
       showScreen("screen-owners",false);renderOwners();break;
     case "screen-books":
       showScreen("screen-books",false);
       document.getElementById("books-label-wrap").textContent=currentOwner+" の蔵書";
       renderBooks();
-      updateBreadcrumb([{label:"持ち主一覧",action:"backToOwners()"},{label:currentOwner}]);
+      updateBreadcrumb([{label:"ホーム",action:"backToHome()"},{label:"持ち主一覧",action:"backToOwners()"},{label:currentOwner}]);
       break;
     case "screen-detail":
       if(!currentBookId){showScreen("screen-books",false);renderBooks();return;}
       showScreen("screen-detail",false);renderDetail();
       const b=books.find(x=>x.id===currentBookId);
       if(b)updateBreadcrumb([
+        {label:"ホーム",action:"backToHome()"},
         {label:"持ち主一覧",action:"backToOwners()"},
         {label:currentOwner,action:"backToBooks()"},
         {label:b.title}
@@ -1283,12 +1293,12 @@ window.addEventListener("popstate",(e)=>{
       break;
     case "screen-mgmt":
       showScreen("screen-mgmt",false);
-      updateBreadcrumb([{label:"持ち主一覧",action:"backToOwners()"},{label:"管理"}]);
+      updateBreadcrumb([{label:"ホーム",action:"backToHome()"},{label:"持ち主一覧",action:"backToOwners()"},{label:"管理"}]);
       renderMgmt();break;
   }
 });
 function getCurrentScreen(){
-  return["screen-owners","screen-books","screen-detail","screen-mgmt"].find(s=>!document.getElementById(s).classList.contains("hidden"))||"screen-owners";
+  return["screen-home","screen-owners","screen-books","screen-detail","screen-mgmt"].find(s=>!document.getElementById(s).classList.contains("hidden"))||"screen-home";
 }
 </script>
 </body>
