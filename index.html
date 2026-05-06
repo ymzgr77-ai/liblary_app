@@ -486,6 +486,10 @@
         <div class="field-label">著者</div>
         <input class="field-input" id="manual-author" type="text" placeholder="著者名を入力…">
       </div>
+      <div class="field-group">
+        <div class="field-label">✦ おすすめポイント（任意）</div>
+        <textarea class="field-input" id="reg-recommendation" rows="2" placeholder="この本の見どころを一言…" maxlength="200" style="resize:vertical;min-height:56px"></textarea>
+      </div>
     </div>
     <div class="btn-group">
       <button class="btn btn-secondary" onclick="closeRegisterModal()">キャンセル</button>
@@ -560,10 +564,10 @@ function formatDatetime(dt){
 /* ════ loansからrecommendation/reviewsを再構築（GASがこれらのフィールドを保存しないため） ════ */
 function reconstructBookExtras(){
   books.forEach(b=>{
-    // ① 最新のおすすめポイントを貸出記録から復元
+    // ① 最新のおすすめポイントを貸出・登録記録から復元（loanDate空の登録記録も含む）
     const loanRecs=loans
-      .filter(l=>String(l.bookId)===String(b.id)&&l.loanDate&&String(l.recommendation||"").trim())
-      .sort((a,z)=>new Date(z.loanDate)-new Date(a.loanDate));
+      .filter(l=>String(l.bookId)===String(b.id)&&String(l.recommendation||"").trim())
+      .sort((a,z)=>new Date(z.registeredAt||z.loanDate||0)-new Date(a.registeredAt||a.loanDate||0));
     if(loanRecs.length>0){
       b.recommendation=loanRecs[0].recommendation;
     } else if(!b.recommendation){
@@ -987,17 +991,12 @@ function renderDetail(){
       <button class="btn btn-primary"   onclick="borrowBook()" ${!ok?"disabled":""}>借りる</button>
       <button class="btn btn-secondary" onclick="returnBook()" ${ ok?"disabled":""}>返却する</button>
     </div>
-    ${ok?`
-      <div class="input-wrap visible" style="margin-top:16px">
-        <div class="input-label">✦ おすすめポイント（任意・持ち主向け）</div>
-        <textarea class="input-field" id="recommendation-input" rows="2" placeholder="この本の見どころを一言…" maxlength="200">${b.recommendation||""}</textarea>
-      </div>
-    `:`
+    ${!ok?`
       <div class="input-wrap visible" style="margin-top:16px">
         <div class="input-label">✎ 感想（任意・借りた人向け）</div>
         <textarea class="input-field" id="review-input" rows="2" placeholder="読んだ感想を一言…" maxlength="200"></textarea>
       </div>
-    `}
+    `:""}
     <div class="delete-zone">
       <button class="btn-delete-sm" onclick="deleteBook(${b.id})">この本を登録から削除する</button>
     </div>`;
@@ -1014,14 +1013,11 @@ async function borrowBook(){
     return;
   }
   const b=books.find(x=>x.id===currentBookId);
-  // ① おすすめポイントを保存
-  const rec=document.getElementById("recommendation-input")?.value.trim()||"";
-  b.recommendation=rec;
   b.status="borrowed";b.borrower=name;
   renderDetail();renderBooks();
   showResult("📖","貸出しました",`「${b.title}」を\n${name} さんに貸出しました`);
-  // ② 分単位のタイムスタンプで記録
-  const loanRecord={bookId:b.id,borrower:name,loanDate:nowDatetime(),returnDate:"",recommendation:rec};
+  // ② 分単位のタイムスタンプで記録（おすすめポイントは登録時に設定済みの値を引き継ぐ）
+  const loanRecord={bookId:b.id,borrower:name,loanDate:nowDatetime(),returnDate:"",recommendation:b.recommendation||""};
   loans.push(loanRecord);
   localStorage.setItem("lending_loans",JSON.stringify(loans));
   gasPost({action:"saveLoans",loans:[loanRecord]});
@@ -1121,6 +1117,7 @@ function resetModal(){
   document.getElementById("photo-preview-img").src="";
   document.getElementById("manual-title").value="";
   document.getElementById("manual-author").value="";
+  document.getElementById("reg-recommendation").value="";
   document.getElementById("register-confirm-btn").disabled=true;
   document.getElementById("rescan-btn").classList.remove("active");
   document.getElementById("scanner-stopped").classList.remove("active");
@@ -1300,10 +1297,19 @@ async function confirmRegister(){
   const author=document.getElementById("manual-author").value.trim()||pendingBook?.author||"";
   const isbn=pendingBook?.isbn||"";
   const cover=capturedPhotoDataUrl||pendingBook?.coverImage||null;
+  const rec=document.getElementById("reg-recommendation")?.value.trim()||"";
   if(!title)return;
   document.getElementById("register-confirm-btn").disabled=true;
   document.getElementById("register-confirm-btn").textContent="保存中…";
-  books.push({id:Date.now(),owner:currentOwner,title,author,isbn,coverImage:cover,emoji:"📖",status:"available",borrower:"",recommendation:"",reviews:[]});
+  const newId=Date.now();
+  books.push({id:newId,owner:currentOwner,title,author,isbn,coverImage:cover,emoji:"📖",status:"available",borrower:"",recommendation:rec,reviews:[]});
+  // 登録時のおすすめポイントをloansに保存（GASのsaveBooksはrecommendationを保存しないため）
+  if(rec){
+    const regRecord={bookId:newId,borrower:currentOwner,loanDate:"",returnDate:"",recommendation:rec,registeredAt:nowDatetime()};
+    loans.push(regRecord);
+    localStorage.setItem("lending_loans",JSON.stringify(loans));
+    gasPost({action:"saveLoans",loans:[regRecord]});
+  }
   closeRegisterModal();renderBooks();
   showResult("📚","登録しました",`「${title}」を\n${currentOwner} の蔵書に登録しました`);
   saveAll();
