@@ -317,8 +317,6 @@
   .rank-info{flex:1;min-width:0;}
   .rank-title{font-size:13px;font-weight:600;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:2px;}
   .rank-author{font-family:'DM Mono',monospace;font-size:9px;color:var(--ink3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-  .rank-count{font-family:'DM Mono',monospace;font-size:20px;color:var(--gold);flex-shrink:0;line-height:1;}
-  .rank-count span{font-size:10px;color:var(--ink3);margin-left:1px;}
 
   /* ════ ⑤ 週間一押しセクション ════ */
   .weekly-pick-card{
@@ -722,8 +720,8 @@ function renderRankingSection(ranking){
   if(!ranking.length){sec.innerHTML="";return;}
   const total=ranking.reduce((s,r)=>s+r.count,0);
   let showCount=1;
-  if(total>=15)showCount=5;
-  else if(total>=5)showCount=3;
+  if(total>=100)showCount=5;
+  else if(total>=21)showCount=3;
   const items=ranking.slice(0,showCount);
   const month=new Date().getMonth()+1;
   const medals=["🥇","🥈","🥉"];
@@ -739,7 +737,6 @@ function renderRankingSection(ranking){
         <div class="rank-title">${book.title}</div>
         <div class="rank-author">${book.author||""}</div>
       </div>
-      <div class="rank-count">${item.count}<span>回</span></div>
     </div>`;
   });
   html+="</div>";
