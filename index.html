@@ -103,7 +103,7 @@
   .detail-cover img,.detail-cover svg{width:100%;height:100%;object-fit:cover;}
   .detail-title{font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:600;text-align:center;margin-bottom:5px;line-height:1.4;color:var(--ink);}
   .detail-author{font-family:'DM Mono',monospace;font-size:11px;color:var(--ink3);text-align:center;margin-bottom:6px;}
-  .detail-owner{font-family:'DM Mono',monospace;font-size:10px;color:var(--ink3);text-align:center;margin-bottom:24px;letter-spacing:.08em;}
+  .detail-owner{font-family:'DM Mono',monospace;font-size:10px;color:var(--ink3);text-align:center;margin-bottom:16px;letter-spacing:.08em;}
   .detail-divider{border:none;border-top:1px solid var(--border);margin:22px 0;}
   .detail-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
   .detail-label{font-family:'DM Mono',monospace;font-size:10px;color:var(--ink3);letter-spacing:.1em;text-transform:uppercase;}
@@ -133,6 +133,7 @@
   .input-field{width:100%;padding:11px 14px;border:1px solid var(--border2);border-radius:2px;font-family:'Noto Serif JP',serif;font-size:14px;background:var(--surface2);color:var(--ink);outline:none;transition:border-color .15s;}
   .input-field:focus{border-color:var(--gold);}
   .input-field::placeholder{color:var(--ink3);}
+  textarea.input-field{resize:none;line-height:1.7;}
 
   .empty-state{text-align:center;padding:56px 0;color:var(--ink3);font-family:'DM Mono',monospace;font-size:11px;letter-spacing:.1em;line-height:2.2;}
 
@@ -284,6 +285,86 @@
   .result-btn.ok:hover{background:var(--gold2);}
   .result-btn.warn{background:transparent;color:var(--ink2);border:1px solid var(--border2);}
   .result-btn.warn:hover{border-color:var(--ink2);}
+
+  /* ════ ① トップヒーローアクション ════ */
+  .hero-actions{display:flex;gap:12px;margin-bottom:28px;}
+  .hero-btn{
+    flex:1;display:flex;flex-direction:column;align-items:center;gap:8px;
+    padding:20px 0;background:var(--surface);
+    border:1px solid var(--border2);border-radius:4px;cursor:pointer;
+    font-family:'Noto Serif JP',serif;font-size:14px;font-weight:600;
+    color:var(--ink);transition:all .2s;letter-spacing:.05em;
+  }
+  .hero-btn:hover{border-color:var(--gold);background:var(--surface2);color:var(--gold2);}
+  .hero-btn-icon{font-size:26px;line-height:1;}
+  .hero-btn-return{color:var(--ink2);}
+  .hero-btn-return:hover{color:var(--gold2);}
+
+  /* ════ ③ ランキングセクション ════ */
+  .ranking-list{margin-bottom:28px;}
+  .rank-item{
+    display:flex;align-items:center;gap:12px;
+    padding:11px 14px;background:var(--surface);
+    border:1px solid var(--border);border-radius:3px;
+    margin-bottom:6px;cursor:pointer;transition:all .2s;
+  }
+  .rank-item:hover{border-color:var(--gold);background:var(--surface2);}
+  .rank-medal{font-size:18px;width:26px;text-align:center;flex-shrink:0;font-family:'DM Mono',monospace;color:var(--ink3);}
+  .rank-thumb{
+    width:34px;height:48px;border-radius:2px;border:1px solid var(--border2);
+    overflow:hidden;display:flex;align-items:center;justify-content:center;
+    font-size:15px;flex-shrink:0;background:var(--surface2);
+  }
+  .rank-thumb img,.rank-thumb svg{width:100%;height:100%;object-fit:cover;}
+  .rank-info{flex:1;min-width:0;}
+  .rank-title{font-size:13px;font-weight:600;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:2px;}
+  .rank-author{font-family:'DM Mono',monospace;font-size:9px;color:var(--ink3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .rank-count{font-family:'DM Mono',monospace;font-size:20px;color:var(--gold);flex-shrink:0;line-height:1;}
+  .rank-count span{font-size:10px;color:var(--ink3);margin-left:1px;}
+
+  /* ════ ⑤ 週間一押しセクション ════ */
+  .weekly-pick-card{
+    background:var(--surface);border:1px solid var(--border2);
+    border-radius:4px;padding:18px;margin-bottom:28px;
+    border-left:2px solid var(--gold);
+  }
+  .weekly-loading{display:flex;align-items:center;gap:10px;font-family:'DM Mono',monospace;font-size:11px;color:var(--ink3);letter-spacing:.06em;}
+  .weekly-pick-content{display:flex;gap:14px;margin-bottom:14px;}
+  .weekly-cover{
+    width:52px;height:72px;border-radius:2px;border:1px solid var(--border2);
+    overflow:hidden;display:flex;align-items:center;justify-content:center;
+    font-size:20px;flex-shrink:0;background:var(--surface2);
+    box-shadow:3px 3px 10px rgba(0,0,0,.4);
+  }
+  .weekly-cover img,.weekly-cover svg{width:100%;height:100%;object-fit:cover;}
+  .weekly-info{flex:1;min-width:0;}
+  .weekly-title{font-size:14px;font-weight:600;color:var(--ink);margin-bottom:3px;line-height:1.4;}
+  .weekly-author{font-family:'DM Mono',monospace;font-size:10px;color:var(--ink3);margin-bottom:8px;}
+  .weekly-summary{font-size:12px;color:var(--ink2);line-height:1.75;font-style:italic;}
+  .weekly-detail-btn{
+    width:100%;padding:9px 0;border:1px solid var(--border2);
+    border-radius:2px;background:transparent;color:var(--gold);
+    font-family:'DM Mono',monospace;font-size:11px;letter-spacing:.08em;
+    cursor:pointer;transition:all .18s;
+  }
+  .weekly-detail-btn:hover{border-color:var(--gold);background:rgba(201,168,76,.05);}
+
+  /* ════ ① おすすめポイント表示 ════ */
+  .detail-rec-box{
+    background:rgba(201,168,76,.06);border:1px solid rgba(201,168,76,.2);
+    border-radius:3px;padding:12px 14px;margin-bottom:14px;
+  }
+  .detail-rec-label{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold);margin-bottom:6px;}
+  .detail-rec-text{font-size:13px;color:var(--ink2);line-height:1.75;}
+
+  /* ════ ④ 感想表示 ════ */
+  .detail-reviews{margin-bottom:14px;}
+  .detail-reviews-label{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink3);margin-bottom:8px;}
+  .review-item{padding:10px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:3px;margin-bottom:6px;}
+  .review-meta{display:flex;align-items:center;gap:8px;margin-bottom:5px;}
+  .review-borrower{font-family:'DM Mono',monospace;font-size:10px;color:var(--ink3);}
+  .review-date{font-family:'DM Mono',monospace;font-size:9px;color:var(--ink3);opacity:.6;}
+  .review-text{font-size:12px;color:var(--ink2);line-height:1.75;}
 </style>
 </head>
 <body>
@@ -307,10 +388,30 @@
   </header>
   <div class="breadcrumb" id="breadcrumb"></div>
 
+  <!-- ════ 画面1: 持ち主一覧 + トップ ════ -->
   <div id="screen-owners" class="screen">
-    <div class="section-label">持ち主を選択</div>
-    <div id="owner-list"></div>
+    <!-- ⑤ アクションボタン -->
+    <div class="hero-actions">
+      <button class="hero-btn" onclick="scrollToOwners()">
+        <span class="hero-btn-icon">📖</span>
+        <span>貸出する</span>
+      </button>
+      <button class="hero-btn hero-btn-return" onclick="scrollToOwners()">
+        <span class="hero-btn-icon">↩</span>
+        <span>返却する</span>
+      </button>
+    </div>
+    <!-- ③ 今月のランキング -->
+    <div id="ranking-section"></div>
+    <!-- ⑤ 今週の一押し -->
+    <div id="weekly-pick-section"></div>
+    <!-- 持ち主一覧 -->
+    <div id="owner-section">
+      <div class="section-label">持ち主を選択</div>
+      <div id="owner-list"></div>
+    </div>
   </div>
+
   <div id="screen-books" class="screen hidden">
     <div class="section-label" id="books-label-wrap">蔵書一覧</div>
     <div id="book-list"></div>
@@ -438,27 +539,49 @@ async function uploadImageToDrive(dataUrl,fileName){
 const EMOJI_POOL=["📗","📘","📙","📕","📓","📒","📔","📚"];
 const defaultOwners=[{name:"山田",emoji:"📗"},{name:"佐藤",emoji:"📘"},{name:"鈴木",emoji:"📙"}];
 const defaultBooks=[
-  {id:1,owner:"山田",title:"AI入門",author:"",isbn:"",coverImage:null,emoji:"🤖",status:"available",borrower:""},
-  {id:2,owner:"山田",title:"経済の基本",author:"",isbn:"",coverImage:null,emoji:"📊",status:"available",borrower:""},
-  {id:3,owner:"佐藤",title:"環境政策の未来",author:"",isbn:"",coverImage:null,emoji:"🌿",status:"available",borrower:""},
-  {id:4,owner:"鈴木",title:"都市計画概論",author:"",isbn:"",coverImage:null,emoji:"🏙️",status:"available",borrower:""}
+  {id:1,owner:"山田",title:"AI入門",author:"",isbn:"",coverImage:null,emoji:"🤖",status:"available",borrower:"",recommendation:"",reviews:[]},
+  {id:2,owner:"山田",title:"経済の基本",author:"",isbn:"",coverImage:null,emoji:"📊",status:"available",borrower:"",recommendation:"",reviews:[]},
+  {id:3,owner:"佐藤",title:"環境政策の未来",author:"",isbn:"",coverImage:null,emoji:"🌿",status:"available",borrower:"",recommendation:"",reviews:[]},
+  {id:4,owner:"鈴木",title:"都市計画概論",author:"",isbn:"",coverImage:null,emoji:"🏙️",status:"available",borrower:"",recommendation:"",reviews:[]}
 ];
-let owners=[],books=[];
+let owners=[],books=[],loans=[];
 let currentOwner="",currentBookId=null;
+
+/* ════ ② 日時ユーティリティ（分単位管理） ════ */
+function nowDatetime(){
+  const n=new Date();
+  const p=x=>String(x).padStart(2,"0");
+  return `${n.getFullYear()}-${p(n.getMonth()+1)}-${p(n.getDate())}T${p(n.getHours())}:${p(n.getMinutes())}`;
+}
+function formatDatetime(dt){
+  if(!dt)return"";
+  if(dt.includes("T")){
+    const[d,t]=dt.split("T");
+    return`${d} ${t}`;
+  }
+  return dt;
+}
 
 /* ════ 起動 ════ */
 async function init(){
   try{
     const data=await gasGet();
     owners=data.owners&&data.owners.length?data.owners:defaultOwners;
-    books=data.books&&data.books.length?data.books.map(b=>({...b,id:Number(b.id)||Date.now()})):defaultBooks;
+    books=data.books&&data.books.length
+      ?data.books.map(b=>({recommendation:"",reviews:[],...b,id:Number(b.id)||Date.now()}))
+      :defaultBooks;
+    loans=data.loans&&data.loans.length?data.loans:[];
   }catch(e){
     owners=JSON.parse(localStorage.getItem("lending_owners")||"null")||defaultOwners;
     books=JSON.parse(localStorage.getItem("lending_books")||"null")||defaultBooks;
+    loans=JSON.parse(localStorage.getItem("lending_loans")||"null")||[];
     showToast("オフラインモード：ローカルデータを使用中");
   }
+  // 既存booksにrecommendation/reviewsフィールドを補完
+  books=books.map(b=>({recommendation:"",reviews:[],...b}));
   localStorage.setItem("lending_owners",JSON.stringify(owners));
   localStorage.setItem("lending_books",JSON.stringify(books));
+  localStorage.setItem("lending_loans",JSON.stringify(loans));
   document.getElementById("loading-screen").classList.add("hidden");
   renderOwners();
   history.replaceState({screen:"screen-owners",owner:"",bookId:null},"","#screen-owners");
@@ -479,9 +602,11 @@ async function syncAll(){
   try{
     const data=await gasGet();
     if(data.owners&&data.owners.length)owners=data.owners;
-    if(data.books&&data.books.length)books=data.books.map(b=>({...b,id:Number(b.id)||Date.now()}));
+    if(data.books&&data.books.length)books=data.books.map(b=>({recommendation:"",reviews:[],...b,id:Number(b.id)||Date.now()}));
+    if(data.loans&&data.loans.length)loans=data.loans;
     localStorage.setItem("lending_owners",JSON.stringify(owners));
     localStorage.setItem("lending_books",JSON.stringify(books));
+    localStorage.setItem("lending_loans",JSON.stringify(loans));
     renderOwners();showToast("同期しました");
   }catch(e){showToast("同期失敗：ネットワークを確認してください");}
   btn.classList.remove("syncing");btn.textContent="↑↓ 同期";
@@ -492,7 +617,7 @@ async function generateCoverSVG(title,author){
   try{
     const res=await fetch("https://api.anthropic.com/v1/messages",{
       method:"POST",
-      headers:{"Content-Type":"application/json"},
+      headers:{"Content-Type":"application/json","anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-iab":"true"},
       body:JSON.stringify({
         model:"claude-sonnet-4-20250514",
         max_tokens:1000,
@@ -538,6 +663,10 @@ function showScreen(id,pushHistory=true){
     history.pushState({screen:id,owner:currentOwner,bookId:currentBookId},"","#"+id);
   }
 }
+function scrollToOwners(){
+  const el=document.getElementById("owner-section");
+  if(el)el.scrollIntoView({behavior:"smooth",block:"start"});
+}
 
 /* ════ 操作結果ポップアップ ════ */
 let _resultCb=null;
@@ -556,6 +685,134 @@ function closeResult(){
   if(_resultCb){_resultCb();_resultCb=null;}
 }
 
+/* ════ ③ 貸出回数ランキング計算 ════ */
+function computeRanking(){
+  // 貸出記録：loanDate が存在する行
+  const loanRecs=loans.filter(l=>l.loanDate&&String(l.loanDate).trim());
+  // 返却記録：returnDate が存在し loanDate が空の行
+  const returnRecs=loans.filter(l=>l.returnDate&&String(l.returnDate).trim()&&(!l.loanDate||!String(l.loanDate).trim()));
+  const counts={};
+  const usedSet=new Set();
+
+  returnRecs.forEach(ret=>{
+    const retTime=new Date(ret.returnDate).getTime();
+    if(isNaN(retTime))return;
+    let bestIdx=-1,bestTime=-Infinity;
+    loanRecs.forEach((ln,idx)=>{
+      if(usedSet.has(idx))return;
+      if(String(ln.bookId)!==String(ret.bookId))return;
+      if(ln.borrower!==ret.borrower)return;
+      const lnTime=new Date(ln.loanDate).getTime();
+      if(isNaN(lnTime))return;
+      if(lnTime<retTime&&lnTime>bestTime){bestTime=lnTime;bestIdx=idx;}
+    });
+    if(bestIdx>=0){
+      usedSet.add(bestIdx);
+      const durationMin=(retTime-bestTime)/60000;
+      if(durationMin>=10){
+        counts[ret.bookId]=(counts[ret.bookId]||0)+1;
+      }
+    }
+  });
+
+  return Object.entries(counts)
+    .map(([bookId,count])=>({bookId:Number(bookId),count}))
+    .sort((a,b)=>b.count-a.count);
+}
+
+/* ════ ⑤ トップセクション描画 ════ */
+function renderTopSection(){
+  const ranking=computeRanking();
+  renderRankingSection(ranking);
+  renderWeeklyPick();
+}
+
+function renderRankingSection(ranking){
+  const sec=document.getElementById("ranking-section");
+  if(!ranking.length){sec.innerHTML="";return;}
+  const total=ranking.reduce((s,r)=>s+r.count,0);
+  let showCount=1;
+  if(total>=15)showCount=5;
+  else if(total>=5)showCount=3;
+  const items=ranking.slice(0,showCount);
+  const month=new Date().getMonth()+1;
+  const medals=["🥇","🥈","🥉"];
+  let html=`<div class="section-label">${month}月のトップ貸し出し図書</div><div class="ranking-list">`;
+  items.forEach((item,i)=>{
+    const book=books.find(b=>b.id==item.bookId);
+    if(!book)return;
+    const medal=i<3?medals[i]:`${i+1}`;
+    html+=`<div class="rank-item" onclick="selectBookFromRanking(${book.id})">
+      <div class="rank-medal">${medal}</div>
+      <div class="rank-thumb">${coverInnerHtml(book)}</div>
+      <div class="rank-info">
+        <div class="rank-title">${book.title}</div>
+        <div class="rank-author">${book.author||""}</div>
+      </div>
+      <div class="rank-count">${item.count}<span>回</span></div>
+    </div>`;
+  });
+  html+="</div>";
+  sec.innerHTML=html;
+}
+
+async function renderWeeklyPick(){
+  const sec=document.getElementById("weekly-pick-section");
+  const candidates=books.filter(b=>
+    (b.recommendation&&b.recommendation.trim())||
+    (b.reviews&&b.reviews.length>0)
+  );
+  if(!candidates.length){sec.innerHTML="";return;}
+  const pick=candidates[Math.floor(Math.random()*candidates.length)];
+  sec.innerHTML=`<div class="section-label">今週の一押し図書</div>
+    <div class="weekly-pick-card" id="weekly-pick-inner">
+      <div class="weekly-loading"><div class="spinner"></div><span>おすすめ情報を生成中…</span></div>
+    </div>`;
+  // AI要約用のソーステキスト構築
+  let sourceText=`書名：${pick.title}`;
+  if(pick.author)sourceText+=`　著者：${pick.author}`;
+  if(pick.recommendation)sourceText+=`\nおすすめポイント：${pick.recommendation}`;
+  if(pick.reviews&&pick.reviews.length){
+    pick.reviews.slice(-3).forEach(r=>{sourceText+=`\n感想（${r.borrower}）：${r.text}`;});
+  }
+  let summary="";
+  try{
+    const res=await fetch("https://api.anthropic.com/v1/messages",{
+      method:"POST",
+      headers:{"Content-Type":"application/json","anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-iab":"true"},
+      body:JSON.stringify({
+        model:"claude-haiku-4-5",
+        max_tokens:200,
+        messages:[{role:"user",content:`以下の図書情報をもとに、50〜80文字の魅力的な紹介文を日本語で書いてください。宣伝用の短い文章で、読みたくなるようなものにしてください。\n\n${sourceText}`}]
+      })
+    });
+    const data=await res.json();
+    summary=data.content?.find(c=>c.type==="text")?.text||"";
+  }catch(e){}
+  if(!summary){
+    summary=pick.recommendation||(pick.reviews&&pick.reviews[0]?.text)||"";
+    if(summary.length>100)summary=summary.slice(0,100)+"…";
+  }
+  const inner=document.getElementById("weekly-pick-inner");
+  if(!inner)return;
+  inner.innerHTML=`<div class="weekly-pick-content">
+    <div class="weekly-cover">${coverInnerHtml(pick)}</div>
+    <div class="weekly-info">
+      <div class="weekly-title">${pick.title}</div>
+      <div class="weekly-author">${pick.author||""}</div>
+      <div class="weekly-summary">${summary}</div>
+    </div>
+  </div>
+  <button class="weekly-detail-btn" onclick="selectBookFromRanking(${pick.id})">詳細を見る →</button>`;
+}
+
+function selectBookFromRanking(bookId){
+  const book=books.find(b=>b.id==bookId);
+  if(!book)return;
+  currentOwner=book.owner;
+  selectBook(bookId);
+}
+
 /* ════ 画面1 ════ */
 function renderOwners(){
   const list=document.getElementById("owner-list");list.innerHTML="";
@@ -568,6 +825,7 @@ function renderOwners(){
     div.onclick=()=>selectOwner(o.name);list.appendChild(div);
   });
   updateBreadcrumb([]);
+  renderTopSection();
 }
 function selectOwner(name){
   currentOwner=name;showScreen("screen-books");
@@ -594,28 +852,76 @@ function selectBook(id){
   renderDetail();
 }
 
-/* ════ 画面3 ════ */
+/* ════ 画面3：詳細（①おすすめ表示・入力、④感想表示・入力） ════ */
 function renderDetail(){
   const b=books.find(x=>x.id===currentBookId);
   const card=document.getElementById("detail-card");
   const ok=b.status==="available";
   const cover=coverInnerHtml(b);
+
+  // ① おすすめポイント表示
+  let recHtml="";
+  if(b.recommendation&&b.recommendation.trim()){
+    recHtml=`<div class="detail-rec-box">
+      <div class="detail-rec-label">✦ 持ち主のおすすめ</div>
+      <div class="detail-rec-text">${b.recommendation}</div>
+    </div>`;
+  }
+
+  // ④ 感想一覧表示（最新3件）
+  let reviewsHtml="";
+  if(b.reviews&&b.reviews.length){
+    reviewsHtml=`<div class="detail-reviews">
+      <div class="detail-reviews-label">読んだ人の感想</div>`;
+    b.reviews.slice(-3).reverse().forEach(r=>{
+      reviewsHtml+=`<div class="review-item">
+        <div class="review-meta">
+          <span class="review-borrower">${r.borrower}</span>
+          <span class="review-date">${formatDatetime(r.date).slice(0,10)}</span>
+        </div>
+        <div class="review-text">${r.text}</div>
+      </div>`;
+    });
+    reviewsHtml+="</div>";
+  }
+
+  // ② 貸出時のタイムスタンプ（分管理）で最終貸出日を表示
+  const lastLoan=loans.filter(l=>String(l.bookId)==String(b.id)&&l.loanDate).slice(-1)[0];
+  const loanTimeHtml=lastLoan?`<div class="detail-row">
+    <span class="detail-label">最終貸出</span>
+    <span style="font-family:'DM Mono',monospace;font-size:11px;color:var(--ink3)">${formatDatetime(lastLoan.loanDate)}</span>
+  </div>`:"";
+
   card.innerHTML=`
     <div class="detail-cover-wrap"><div class="detail-cover">${cover}</div></div>
     <div class="detail-title">${b.title}</div>
     ${b.author?`<div class="detail-author">${b.author}</div>`:""}
     <div class="detail-owner">所有者：${b.owner}</div>
+    ${recHtml}
+    ${reviewsHtml}
     <hr class="detail-divider">
     <div class="detail-row">
       <span class="detail-label">状態</span>
       <span class="badge ${ok?"available":"borrowed"}">${ok?"貸出可":"貸出中"}</span>
     </div>
     ${!ok?`<div class="detail-row"><span class="detail-label">借りている人</span><span class="detail-value">${b.borrower}</span></div>`:""}
+    ${loanTimeHtml}
     ${b.isbn?`<div class="detail-row"><span class="detail-label">ISBN</span><span style="font-family:'DM Mono',monospace;font-size:11px;color:var(--ink3)">${b.isbn}</span></div>`:""}
-    <div class="input-wrap ${ok?"visible":""}" id="borrower-input-wrap">
-      <div class="input-label">借りる人の名前</div>
-      <input class="input-field" id="borrower-name" type="text" placeholder="名前を入力…" maxlength="20">
-    </div>
+    ${ok?`
+      <div class="input-wrap visible" style="margin-top:14px">
+        <div class="input-label">✦ おすすめポイント（任意・持ち主向け）</div>
+        <textarea class="input-field" id="recommendation-input" rows="2" placeholder="この本の見どころを一言…" maxlength="200">${b.recommendation||""}</textarea>
+      </div>
+      <div class="input-wrap visible" id="borrower-input-wrap" style="margin-top:12px">
+        <div class="input-label">借りる人の名前</div>
+        <input class="input-field" id="borrower-name" type="text" placeholder="名前を入力…" maxlength="20">
+      </div>
+    `:`
+      <div class="input-wrap visible" style="margin-top:14px">
+        <div class="input-label">✎ 感想（任意・借りた人向け）</div>
+        <textarea class="input-field" id="review-input" rows="2" placeholder="読んだ感想を一言…" maxlength="200"></textarea>
+      </div>
+    `}
     <div class="btn-group">
       <button class="btn btn-primary"   onclick="borrowBook()" ${!ok?"disabled":""}>借りる</button>
       <button class="btn btn-secondary" onclick="returnBook()" ${ ok?"disabled":""}>返却する</button>
@@ -625,6 +931,7 @@ function renderDetail(){
     </div>`;
 }
 
+/* ════ ①② 貸出処理（おすすめ保存・分単位タイムスタンプ） ════ */
 async function borrowBook(){
   const input=document.getElementById("borrower-name");
   const name=input?.value.trim()||"";
@@ -635,22 +942,38 @@ async function borrowBook(){
     return;
   }
   const b=books.find(x=>x.id===currentBookId);
+  // ① おすすめポイントを保存
+  const rec=document.getElementById("recommendation-input")?.value.trim()||"";
+  b.recommendation=rec;
   b.status="borrowed";b.borrower=name;
   renderDetail();renderBooks();
   showResult("📖","貸出しました",`「${b.title}」を\n${name} さんに貸出しました`);
-  const today=new Date().toISOString().slice(0,10);
-  gasPost({action:"saveLoans",loans:[{bookId:b.id,borrower:name,loanDate:today,returnDate:""}]});
+  // ② 分単位のタイムスタンプで記録
+  const loanRecord={bookId:b.id,borrower:name,loanDate:nowDatetime(),returnDate:"",recommendation:rec};
+  loans.push(loanRecord);
+  localStorage.setItem("lending_loans",JSON.stringify(loans));
+  gasPost({action:"saveLoans",loans:[loanRecord]});
   saveAll();
 }
 
+/* ════ ②④ 返却処理（感想保存・分単位タイムスタンプ） ════ */
 async function returnBook(){
   const b=books.find(x=>x.id===currentBookId);
   const borrower=b.borrower;
+  // ④ 感想を取得・保存
+  const reviewText=document.getElementById("review-input")?.value.trim()||"";
   b.status="available";b.borrower="";
+  if(reviewText){
+    if(!b.reviews)b.reviews=[];
+    b.reviews.push({borrower,text:reviewText,date:nowDatetime()});
+  }
   renderDetail();renderBooks();
   showResult("✅","返却されました",`「${b.title}」が\n${borrower?borrower+" さんから":""}返却されました`);
-  const today=new Date().toISOString().slice(0,10);
-  gasPost({action:"saveLoans",loans:[{bookId:b.id,borrower:borrower,loanDate:"",returnDate:today}]});
+  // ② 分単位のタイムスタンプで記録
+  const returnRecord={bookId:b.id,borrower,loanDate:"",returnDate:nowDatetime(),review:reviewText};
+  loans.push(returnRecord);
+  localStorage.setItem("lending_loans",JSON.stringify(loans));
+  gasPost({action:"saveLoans",loans:[returnRecord]});
   saveAll();
 }
 
@@ -908,7 +1231,7 @@ async function confirmRegister(){
   if(!title)return;
   document.getElementById("register-confirm-btn").disabled=true;
   document.getElementById("register-confirm-btn").textContent="保存中…";
-  books.push({id:Date.now(),owner:currentOwner,title,author,isbn,coverImage:cover,emoji:"📖",status:"available",borrower:""});
+  books.push({id:Date.now(),owner:currentOwner,title,author,isbn,coverImage:cover,emoji:"📖",status:"available",borrower:"",recommendation:"",reviews:[]});
   closeRegisterModal();renderBooks();
   showResult("📚","登録しました",`「${title}」を\n${currentOwner} の蔵書に登録しました`);
   saveAll();
