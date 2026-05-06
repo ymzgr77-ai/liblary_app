@@ -527,6 +527,9 @@ async function uploadImageToDrive(dataUrl,fileName){
   return result.url;
 }
 
+/* ════ Gemini API キー設定（https://aistudio.google.com/ で無料取得） ════ */
+const GEMINI_API_KEY="";  // ← ここに取得したAPIキーを貼り付けてください
+
 /* ════ データ ════ */
 const EMOJI_POOL=["📗","📘","📙","📕","📓","📒","📔","📚"];
 const defaultOwners=[{name:"山田",emoji:"📗"},{name:"佐藤",emoji:"📘"},{name:"鈴木",emoji:"📙"}];
@@ -806,25 +809,33 @@ async function renderWeeklyPick(){
   let summary="";
 
   // おすすめ・感想データがある場合のみAI要約を試みる
-  if(hasExtra){
+  if(hasExtra&&GEMINI_API_KEY){
     try{
-      const res=await fetch("https://api.anthropic.com/v1/messages",{
-        method:"POST",
-        headers:{"Content-Type":"application/json","anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-iab":"true"},
-        body:JSON.stringify({
-          model:"claude-haiku-4-5-20251022",
-          max_tokens:200,
-          messages:[{role:"user",content:`以下の図書情報をもとに、50〜80文字の魅力的な紹介文を日本語で書いてください。宣伝用の短い文章で、読みたくなるようなものにしてください。\n\n${sourceText}`}]
-        })
-      });
+      const res=await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`,
+        {
+          method:"POST",
+          headers:{"Content-Type":"application/json"},
+          body:JSON.stringify({
+            contents:[{parts:[{text:
+              `以下の図書情報をもとに、50〜80文字の魅力的な紹介文を日本語で書いてください。宣伝用の短い文章で、読みたくなるようなものにしてください。余計な説明は不要です。紹介文のみ返してください。\n\n${sourceText}`
+            }]}],
+            generationConfig:{maxOutputTokens:200,temperature:0.7}
+          })
+        }
+      );
       const data=await res.json();
-      summary=data.content?.find(c=>c.type==="text")?.text||"";
+      summary=data.candidates?.[0]?.content?.parts?.[0]?.text?.trim()||"";
     }catch(e){}
     // APIが使えない場合はおすすめ文・感想をそのまま表示
     if(!summary){
       summary=pick.recommendation||(pick.reviews&&pick.reviews[0]?.text)||"";
       if(summary.length>100)summary=summary.slice(0,100)+"…";
     }
+  } else if(hasExtra&&!GEMINI_API_KEY){
+    // APIキー未設定：おすすめ文・感想をそのまま表示
+    summary=pick.recommendation||(pick.reviews&&pick.reviews[0]?.text)||"";
+    if(summary.length>100)summary=summary.slice(0,100)+"…";
   }
 
   // おすすめ・感想がない場合はデフォルト紹介文
