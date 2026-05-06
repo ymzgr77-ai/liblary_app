@@ -778,41 +778,65 @@ function renderRankingSection(ranking){
 
 async function renderWeeklyPick(){
   const sec=document.getElementById("weekly-pick-section");
-  const candidates=books.filter(b=>
+  if(!books.length){sec.innerHTML="";return;}
+
+  // おすすめ・感想あり優先、なければ全蔵書からランダム選出
+  const withData=books.filter(b=>
     (b.recommendation&&b.recommendation.trim())||
     (b.reviews&&b.reviews.length>0)
   );
-  if(!candidates.length){sec.innerHTML="";return;}
-  const pick=candidates[Math.floor(Math.random()*candidates.length)];
+  const pool=withData.length?withData:books;
+  const pick=pool[Math.floor(Math.random()*pool.length)];
+
   sec.innerHTML=`<div class="section-label">今週の一押し図書</div>
     <div class="weekly-pick-card" id="weekly-pick-inner">
       <div class="weekly-loading"><div class="spinner"></div><span>おすすめ情報を生成中…</span></div>
     </div>`;
+
   // AI要約用のソーステキスト構築
+  const hasExtra=(pick.recommendation&&pick.recommendation.trim())||
+                 (pick.reviews&&pick.reviews.length>0);
   let sourceText=`書名：${pick.title}`;
   if(pick.author)sourceText+=`　著者：${pick.author}`;
-  if(pick.recommendation)sourceText+=`\nおすすめポイント：${pick.recommendation}`;
+  if(pick.recommendation&&pick.recommendation.trim())sourceText+=`\nおすすめポイント：${pick.recommendation}`;
   if(pick.reviews&&pick.reviews.length){
     pick.reviews.slice(-3).forEach(r=>{sourceText+=`\n感想（${r.borrower}）：${r.text}`;});
   }
+
   let summary="";
-  try{
-    const res=await fetch("https://api.anthropic.com/v1/messages",{
-      method:"POST",
-      headers:{"Content-Type":"application/json","anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-iab":"true"},
-      body:JSON.stringify({
-        model:"claude-haiku-4-5",
-        max_tokens:200,
-        messages:[{role:"user",content:`以下の図書情報をもとに、50〜80文字の魅力的な紹介文を日本語で書いてください。宣伝用の短い文章で、読みたくなるようなものにしてください。\n\n${sourceText}`}]
-      })
-    });
-    const data=await res.json();
-    summary=data.content?.find(c=>c.type==="text")?.text||"";
-  }catch(e){}
-  if(!summary){
-    summary=pick.recommendation||(pick.reviews&&pick.reviews[0]?.text)||"";
-    if(summary.length>100)summary=summary.slice(0,100)+"…";
+
+  // おすすめ・感想データがある場合のみAI要約を試みる
+  if(hasExtra){
+    try{
+      const res=await fetch("https://api.anthropic.com/v1/messages",{
+        method:"POST",
+        headers:{"Content-Type":"application/json","anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-iab":"true"},
+        body:JSON.stringify({
+          model:"claude-haiku-4-5-20251022",
+          max_tokens:200,
+          messages:[{role:"user",content:`以下の図書情報をもとに、50〜80文字の魅力的な紹介文を日本語で書いてください。宣伝用の短い文章で、読みたくなるようなものにしてください。\n\n${sourceText}`}]
+        })
+      });
+      const data=await res.json();
+      summary=data.content?.find(c=>c.type==="text")?.text||"";
+    }catch(e){}
+    // APIが使えない場合はおすすめ文・感想をそのまま表示
+    if(!summary){
+      summary=pick.recommendation||(pick.reviews&&pick.reviews[0]?.text)||"";
+      if(summary.length>100)summary=summary.slice(0,100)+"…";
+    }
   }
+
+  // おすすめ・感想がない場合はデフォルト紹介文
+  if(!summary){
+    const defaults=[
+      "まだ感想未登録の一冊です。ぜひ手に取って、最初の感想を残してみてください。",
+      "蔵書の中から今週のおすすめ。借りた方はぜひおすすめポイントを教えてください。",
+      "今週のピックアップ。読んだ感想を登録するとここに表示されます。"
+    ];
+    summary=defaults[Math.floor(Math.random()*defaults.length)];
+  }
+
   const inner=document.getElementById("weekly-pick-inner");
   if(!inner)return;
   inner.innerHTML=`<div class="weekly-pick-content">
