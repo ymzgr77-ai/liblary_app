@@ -554,6 +554,30 @@ function formatDatetime(dt){
   return dt;
 }
 
+/* ════ loansからrecommendation/reviewsを再構築（GASがこれらのフィールドを保存しないため） ════ */
+function reconstructBookExtras(){
+  books.forEach(b=>{
+    // ① 最新のおすすめポイントを貸出記録から復元
+    const loanRecs=loans
+      .filter(l=>String(l.bookId)===String(b.id)&&l.loanDate&&String(l.recommendation||"").trim())
+      .sort((a,z)=>new Date(z.loanDate)-new Date(a.loanDate));
+    if(loanRecs.length>0){
+      b.recommendation=loanRecs[0].recommendation;
+    } else if(!b.recommendation){
+      b.recommendation="";
+    }
+    // ④ 感想を返却記録から復元（重複排除）
+    if(!Array.isArray(b.reviews))b.reviews=[];
+    const returnRecs=loans
+      .filter(l=>String(l.bookId)===String(b.id)&&l.returnDate&&!l.loanDate&&String(l.review||"").trim())
+      .sort((a,z)=>new Date(a.returnDate)-new Date(z.returnDate));
+    returnRecs.forEach(ret=>{
+      const dup=b.reviews.some(r=>r.borrower===ret.borrower&&r.date===ret.returnDate);
+      if(!dup)b.reviews.push({borrower:ret.borrower||"",text:ret.review,date:ret.returnDate});
+    });
+  });
+}
+
 /* ════ 起動 ════ */
 async function init(){
   try{
@@ -569,8 +593,9 @@ async function init(){
     loans=JSON.parse(localStorage.getItem("lending_loans")||"null")||[];
     showToast("オフラインモード：ローカルデータを使用中");
   }
-  // 既存booksにrecommendation/reviewsフィールドを補完
   books=books.map(b=>({recommendation:"",reviews:[],...b}));
+  // loansからrecommendation/reviewsを復元（GASが保存しないフィールドを補完）
+  reconstructBookExtras();
   localStorage.setItem("lending_owners",JSON.stringify(owners));
   localStorage.setItem("lending_books",JSON.stringify(books));
   localStorage.setItem("lending_loans",JSON.stringify(loans));
@@ -596,10 +621,18 @@ async function syncAll(){
     if(data.owners&&data.owners.length)owners=data.owners;
     if(data.books&&data.books.length)books=data.books.map(b=>({recommendation:"",reviews:[],...b,id:Number(b.id)||Date.now()}));
     if(data.loans&&data.loans.length)loans=data.loans;
+    // loansからrecommendation/reviewsを復元
+    reconstructBookExtras();
     localStorage.setItem("lending_owners",JSON.stringify(owners));
     localStorage.setItem("lending_books",JSON.stringify(books));
     localStorage.setItem("lending_loans",JSON.stringify(loans));
-    renderOwners();showToast("同期しました");
+    // 現在表示中の画面を再描画
+    const cur=getCurrentScreen();
+    if(cur==="screen-home")renderHome();
+    else if(cur==="screen-owners")renderOwners();
+    else if(cur==="screen-detail"){renderDetail();renderBooks();}
+    else renderOwners();
+    showToast("同期しました");
   }catch(e){showToast("同期失敗：ネットワークを確認してください");}
   btn.classList.remove("syncing");btn.textContent="↑↓ 同期";
 }
