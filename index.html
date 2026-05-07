@@ -805,11 +805,14 @@ async function renderWeeklyPick(){
   if(!books.length){sec.innerHTML="";return;}
 
   // おすすめ・感想あり優先、なければ全蔵書からランダム選出
-  const withData=books.filter(b=>
+  // 貸出中は除外
+  const available=books.filter(b=>b.status!=="borrowed");
+  if(!available.length){sec.innerHTML="";return;}
+  const withData=available.filter(b=>
     (b.recommendation&&b.recommendation.trim())||
     (b.reviews&&b.reviews.length>0)
   );
-  const pool=withData.length?withData:books;
+  const pool=withData.length?withData:available;
   const pick=pool[Math.floor(Math.random()*pool.length)];
 
   sec.innerHTML=`<div class="section-label">今週のピックアップ</div>
