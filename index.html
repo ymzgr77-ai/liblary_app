@@ -85,7 +85,7 @@
   .book-info{flex:1;min-width:0;}
   .book-title{font-size:14px;font-weight:600;margin-bottom:3px;white-space:nowrap;overflow:hidden;color:var(--ink);}
   .book-title .title-text{display:inline-block;white-space:nowrap;}
-  .book-title.scrolling .title-text{animation:marquee-slide 6s ease-in-out infinite alternate;}
+  .book-title.scrolling .title-text{animation:marquee-loop var(--marquee-duration,6s) linear infinite;}
   .book-author{font-family:'DM Mono',monospace;font-size:10px;color:var(--ink3);margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
   .book-meta{font-family:'DM Mono',monospace;font-size:10px;color:var(--ink3);}
   .book-stars{color:var(--gold);letter-spacing:1px;}
@@ -165,7 +165,7 @@
   .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
 
   .screen{animation:fadeIn .22s ease;}
-  @keyframes marquee-slide{0%,15%{transform:translateX(0);}85%,100%{transform:translateX(var(--slide-dist,0px));}}
+  @keyframes marquee-loop{0%{transform:translateX(0);}100%{transform:translateX(var(--marquee-loop-dist,0px));}}
   @keyframes fadeIn{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
   .hidden{display:none!important;}
 
@@ -274,6 +274,9 @@
   .mgmt-star-btn{background:none;border:none;cursor:pointer;font-size:20px;padding:2px 3px;color:var(--border2);transition:color .15s;line-height:1;}
   .mgmt-star-btn.active{color:var(--gold);}
   .mgmt-star-btn:hover{color:var(--gold2);}
+  .mgmt-nostar-btn{font-size:14px;padding:2px 5px;border:1px solid var(--border);border-radius:2px;color:var(--ink3);}
+  .mgmt-nostar-btn.active{border-color:var(--gold);color:var(--gold);}
+  .mgmt-nostar-btn:hover{border-color:var(--gold2);color:var(--gold2);}
 
   /* ── 蔵書の見どころ編集 ── */
   .mgmt-book-row{background:var(--surface);border:1px solid var(--border);border-radius:3px;margin-bottom:8px;overflow:hidden;}
@@ -357,7 +360,7 @@
   .rank-info{flex:1;min-width:0;}
   .rank-title{font-size:13px;font-weight:600;color:var(--ink);white-space:nowrap;overflow:hidden;margin-bottom:2px;}
   .rank-title .title-text{display:inline-block;white-space:nowrap;}
-  .rank-title.scrolling .title-text{animation:marquee-slide 6s ease-in-out infinite alternate;}
+  .rank-title.scrolling .title-text{animation:marquee-loop var(--marquee-duration,6s) linear infinite;}
   .rank-author{font-family:'DM Mono',monospace;font-size:9px;color:var(--ink3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 
   /* ════ ⑤ 週間ピックアップセクション ════ */
@@ -379,7 +382,7 @@
   .weekly-info{flex:1;min-width:0;}
   .weekly-title{font-size:13px;font-weight:600;color:var(--ink);white-space:nowrap;overflow:hidden;margin-bottom:2px;}
   .weekly-title .title-text{display:inline-block;white-space:nowrap;}
-  .weekly-title.scrolling .title-text{animation:marquee-slide 6s ease-in-out infinite alternate;}
+  .weekly-title.scrolling .title-text{animation:marquee-loop var(--marquee-duration,6s) linear infinite;}
   .weekly-author{font-family:'DM Mono',monospace;font-size:9px;color:var(--ink3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:4px;}
   .weekly-summary{font-size:11px;color:var(--ink3);line-height:1.6;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;}
 
@@ -465,7 +468,7 @@
       </div>
     </div>
     <div class="mgmt-section">
-      <div class="mgmt-section-title">蔵書の見どころ</div>
+      <div class="mgmt-section-title">蔵書の編集</div>
       <div id="mgmt-book-list"></div>
     </div>
     <button class="btn-back" onclick="backToOwners()">← 持ち主一覧</button>
@@ -908,7 +911,6 @@ async function renderWeeklyPick(){
   const inner=document.getElementById("weekly-pick-inner");
   if(!inner)return;
   inner.setAttribute("onclick",`selectBookFromRanking(${pick.id})`);
-  requestAnimationFrame(applyMarquee);
   inner.innerHTML=`<div class="weekly-pick-content">
     <div class="weekly-cover">${coverInnerHtml(pick)}</div>
     <div class="weekly-info">
@@ -917,6 +919,7 @@ async function renderWeeklyPick(){
       ${summary?`<div class="weekly-summary">${summary}</div>`:""}
     </div>
   </div>`;
+  requestAnimationFrame(applyMarquee);
 }
 
 function selectBookFromRanking(bookId){
@@ -1138,7 +1141,8 @@ function renderMgmt(){
   books.forEach(b=>{
     const div=document.createElement("div");div.className="mgmt-book-row";div.id=`mgmt-book-${b.id}`;
     const curStars=b.stars||0;
-    const starBtns=[1,2,3].map(n=>`<button class="mgmt-star-btn${curStars>=n?" active":""}" onclick="saveStars(${b.id},${curStars===n?0:n})" title="${n}つ星">★</button>`).join("");
+    const noStarBtn=`<button class="mgmt-star-btn mgmt-nostar-btn${curStars===0?" active":""}" onclick="saveStars(${b.id},0)" title="無印">−</button>`;
+    const starBtns=noStarBtn+[1,2,3].map(n=>`<button class="mgmt-star-btn${curStars>=n?" active":""}" onclick="saveStars(${b.id},${n})" title="${n}つ星">★</button>`).join("");
     const safeTitle=b.title.replace(/"/g,"&quot;");
     const safeAuthor=(b.author||"").replace(/"/g,"&quot;");
     const safeRec=(b.recommendation||"").replace(/</g,"&lt;");
@@ -1188,16 +1192,24 @@ function addOwner(){
   owners.push({name,emoji:EMOJI_POOL[owners.length%EMOJI_POOL.length]});
   saveAll();input.value="";renderMgmt();renderOwners();showToast(`「${name}」を追加しました`);
 }
-/* ════ タイトルマーキー ════ */
+/* ════ タイトルマーキー（左流れループ・一定速度） ════ */
 function applyMarquee(){
+  const PX_PER_SEC=50; // スクロール速度（px/秒）固定
+  const GAP='      '; // セパレーター（enスペース×6）
   document.querySelectorAll('.book-title .title-text,.rank-title .title-text,.weekly-title .title-text').forEach(span=>{
     const par=span.parentElement;
     par.classList.remove('scrolling');
-    const overflow=span.scrollWidth-par.clientWidth;
-    if(overflow>2){
-      par.style.setProperty('--slide-dist',(-overflow)+'px');
-      par.classList.add('scrolling');
-    }
+    const origW=span.scrollWidth;
+    if(origW<=par.clientWidth+2)return;
+    // テキストを複製して継ぎ目なしループを実現
+    const origText=span.textContent;
+    span.textContent=origText+GAP+origText;
+    // 1ループ分の距離 = 前半（テキスト＋ギャップ）の幅
+    const halfW=span.scrollWidth-origW;
+    // 速度一定：長いタイトルほど時間をかける
+    par.style.setProperty('--marquee-loop-dist',(-halfW)+'px');
+    par.style.setProperty('--marquee-duration',(halfW/PX_PER_SEC)+'s');
+    par.classList.add('scrolling');
   });
 }
 
