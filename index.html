@@ -225,8 +225,7 @@
   .spinner{width:14px;height:14px;border:1.5px solid var(--border2);border-top-color:var(--gold);border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0;}
 
   /* ── 写真撮影 ── */
-  .photo-capture-area{display:none;flex-direction:column;gap:8px;margin-bottom:16px;}
-  .photo-capture-area.active{display:flex;}
+  .photo-capture-area{display:flex;flex-direction:column;gap:8px;margin-bottom:16px;}
   .photo-capture-btn{display:flex;align-items:center;justify-content:center;gap:8px;padding:12px 0;border:1px dashed rgba(201,168,76,.2);border-radius:3px;background:transparent;font-family:'DM Mono',monospace;font-size:11px;color:rgba(201,168,76,.4);letter-spacing:.1em;cursor:pointer;transition:all .18s;width:100%;}
   .photo-capture-btn:hover{border-color:var(--gold);color:var(--gold);background:rgba(201,168,76,.04);}
   .photo-preview-wrap{position:relative;width:100%;aspect-ratio:3/4;max-height:200px;border-radius:4px;overflow:hidden;border:1px solid var(--border2);display:none;}
@@ -287,13 +286,24 @@
   .mgmt-book-rec-preview{font-size:11px;color:var(--ink3);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
   .mgmt-book-edit-btn{padding:5px 10px;border:1px solid var(--border2);border-radius:2px;background:none;color:var(--ink3);font-family:'DM Mono',monospace;font-size:10px;cursor:pointer;transition:all .15s;white-space:nowrap;flex-shrink:0;}
   .mgmt-book-edit-btn:hover,.mgmt-book-edit-btn.active{border-color:var(--gold);color:var(--gold);}
-  .mgmt-book-rec-form{padding:0 14px 12px;border-top:1px solid var(--border);}
+  .mgmt-book-rec-form{padding:12px 14px;border-top:1px solid var(--border);display:flex;flex-direction:column;gap:10px;}
   .mgmt-book-rec-form.hidden{display:none;}
-  .mgmt-book-rec-form textarea{width:100%;box-sizing:border-box;padding:10px 12px;margin-top:10px;border:1px solid var(--border2);border-radius:2px;background:var(--surface2);color:var(--ink);font-family:'Noto Serif JP',serif;font-size:12px;line-height:1.75;resize:vertical;outline:none;transition:border-color .15s;}
-  .mgmt-book-rec-form textarea:focus{border-color:var(--gold);}
-  .mgmt-book-rec-form textarea::placeholder{color:var(--ink3);}
-  .mgmt-book-rec-save{margin-top:8px;padding:7px 18px;border:none;border-radius:2px;background:var(--gold);color:#0f1117;font-family:'Noto Serif JP',serif;font-size:12px;font-weight:600;cursor:pointer;transition:background .15s;}
+  .mgmt-edit-top{display:flex;gap:12px;align-items:flex-start;}
+  .mgmt-edit-cover-wrap{display:flex;flex-direction:column;align-items:center;gap:6px;flex-shrink:0;}
+  .mgmt-edit-cover{width:48px;height:66px;border-radius:2px;border:1px solid var(--border2);overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:18px;background:var(--surface2);}
+  .mgmt-edit-cover img,.mgmt-edit-cover svg{width:100%;height:100%;object-fit:cover;}
+  .mgmt-photo-btn{padding:4px 8px;border:1px dashed rgba(201,168,76,.3);border-radius:2px;background:none;color:rgba(201,168,76,.5);font-family:'DM Mono',monospace;font-size:9px;cursor:pointer;transition:all .15s;letter-spacing:.06em;white-space:nowrap;}
+  .mgmt-photo-btn:hover{border-color:var(--gold);color:var(--gold);}
+  .mgmt-edit-fields{flex:1;display:flex;flex-direction:column;gap:8px;}
+  .mgmt-field-input{width:100%;padding:8px 10px;border:1px solid var(--border2);border-radius:2px;font-family:'Noto Serif JP',serif;font-size:12px;background:var(--surface2);color:var(--ink);outline:none;transition:border-color .15s;}
+  .mgmt-field-input:focus{border-color:var(--gold);}
+  .mgmt-field-input::placeholder{color:var(--ink3);}
+  .mgmt-field-textarea{width:100%;padding:8px 10px;border:1px solid var(--border2);border-radius:2px;font-family:'Noto Serif JP',serif;font-size:12px;background:var(--surface2);color:var(--ink);outline:none;transition:border-color .15s;resize:vertical;line-height:1.7;}
+  .mgmt-field-textarea:focus{border-color:var(--gold);}
+  .mgmt-field-textarea::placeholder{color:var(--ink3);}
+  .mgmt-book-rec-save{padding:8px 20px;border:none;border-radius:2px;background:var(--gold);color:#0f1117;font-family:'Noto Serif JP',serif;font-size:12px;font-weight:600;cursor:pointer;transition:background .15s;align-self:flex-end;}
   .mgmt-book-rec-save:hover{background:var(--gold2);}
+  .mgmt-uploading{font-family:'DM Mono',monospace;font-size:9px;color:var(--ink3);letter-spacing:.06em;text-align:center;}
 
   /* ── 確認ダイアログ ── */
   .confirm-overlay{position:fixed;inset:0;background:rgba(0,0,0,.8);backdrop-filter:blur(4px);z-index:400;display:flex;align-items:center;justify-content:center;padding:24px;}
@@ -508,6 +518,7 @@
       </div>
     </div>
     <input type="file" id="photo-file-input" accept="image/*" capture="environment" onchange="onPhotoSelected(event)">
+    <input type="file" id="mgmt-photo-input" accept="image/*" capture="environment" style="display:none" onchange="onMgmtPhotoSelected(event)">
     <div class="divider-text">または手動入力</div>
     <div class="manual-input-area">
       <div class="field-group">
@@ -1128,6 +1139,9 @@ function renderMgmt(){
     const div=document.createElement("div");div.className="mgmt-book-row";div.id=`mgmt-book-${b.id}`;
     const curStars=b.stars||0;
     const starBtns=[1,2,3].map(n=>`<button class="mgmt-star-btn${curStars>=n?" active":""}" onclick="saveStars(${b.id},${curStars===n?0:n})" title="${n}つ星">★</button>`).join("");
+    const safeTitle=b.title.replace(/"/g,"&quot;");
+    const safeAuthor=(b.author||"").replace(/"/g,"&quot;");
+    const safeRec=(b.recommendation||"").replace(/</g,"&lt;");
     div.innerHTML=`
       <div class="mgmt-book-header">
         <div class="mgmt-book-thumb">${coverInnerHtml(b)}</div>
@@ -1140,8 +1154,28 @@ function renderMgmt(){
         <button class="mgmt-book-edit-btn" id="mgmt-edit-btn-${b.id}" onclick="toggleRecEdit(${b.id})">編集</button>
       </div>
       <div class="mgmt-book-rec-form hidden" id="mgmt-rec-form-${b.id}">
-        <textarea id="mgmt-rec-text-${b.id}" rows="3" maxlength="200" placeholder="この本の見どころを一言…（最大200文字）">${b.recommendation||""}</textarea>
-        <button class="mgmt-book-rec-save" onclick="saveRecEdit(${b.id})">保存する</button>
+        <div class="mgmt-edit-top">
+          <div class="mgmt-edit-cover-wrap">
+            <div class="mgmt-edit-cover" id="mgmt-edit-cover-${b.id}">${coverInnerHtml(b)}</div>
+            <button class="mgmt-photo-btn" onclick="openMgmtPhoto(${b.id})">📷 変更</button>
+            <div class="mgmt-uploading hidden" id="mgmt-uploading-${b.id}">uploading…</div>
+          </div>
+          <div class="mgmt-edit-fields">
+            <div>
+              <div class="field-label" style="margin-bottom:4px">タイトル</div>
+              <input class="mgmt-field-input" id="mgmt-title-${b.id}" type="text" value="${safeTitle}" placeholder="書名…">
+            </div>
+            <div>
+              <div class="field-label" style="margin-bottom:4px">著者</div>
+              <input class="mgmt-field-input" id="mgmt-author-${b.id}" type="text" value="${safeAuthor}" placeholder="著者名…">
+            </div>
+          </div>
+        </div>
+        <div>
+          <div class="field-label" style="margin-bottom:4px">✦ 見どころ・おすすめポイント</div>
+          <textarea class="mgmt-field-textarea" id="mgmt-rec-text-${b.id}" rows="3" maxlength="200" placeholder="この本の見どころを一言…（最大200文字）">${safeRec}</textarea>
+        </div>
+        <button class="mgmt-book-rec-save" onclick="saveBookEdit(${b.id})">保存する</button>
       </div>`;
     bookList.appendChild(div);
   });
@@ -1188,18 +1222,58 @@ function toggleRecEdit(bookId){
   btn.classList.toggle("active",!isHidden);
   if(!isHidden)document.getElementById(`mgmt-rec-text-${bookId}`)?.focus();
 }
-async function saveRecEdit(bookId){
+/* 管理画面：表紙変更 */
+let mgmtEditBookId=null,mgmtPendingCover=null;
+function openMgmtPhoto(bookId){
+  mgmtEditBookId=bookId;mgmtPendingCover=null;
+  const inp=document.getElementById("mgmt-photo-input");
+  inp.value="";inp.click();
+}
+async function onMgmtPhotoSelected(event){
+  const file=event.target.files[0];
+  if(!file||!mgmtEditBookId)return;
+  const bookId=mgmtEditBookId;
+  const upEl=document.getElementById(`mgmt-uploading-${bookId}`);
+  const covEl=document.getElementById(`mgmt-edit-cover-${bookId}`);
+  if(upEl)upEl.classList.remove("hidden");
+  const reader=new FileReader();
+  reader.onload=async(e)=>{
+    const img=new Image();
+    img.onload=async()=>{
+      const MAX=600,scale=MAX/Math.min(img.width,img.height);
+      const canvas=document.createElement("canvas");
+      canvas.width=Math.round(img.width*scale);canvas.height=Math.round(img.height*scale);
+      canvas.getContext("2d").drawImage(img,0,0,canvas.width,canvas.height);
+      const jpeg=canvas.toDataURL("image/jpeg",0.80);
+      try{
+        const url=await uploadImageToDrive(jpeg,`cover_${bookId}_${Date.now()}.jpg`);
+        mgmtPendingCover=url;
+        if(covEl)covEl.innerHTML=`<img src="${url}" style="width:100%;height:100%;object-fit:cover">`;
+        showToast("表紙写真を更新しました");
+      }catch(err){showToast("写真のアップロードに失敗しました");}
+      if(upEl)upEl.classList.add("hidden");
+    };
+    img.src=e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+/* 管理画面：書籍情報を保存 */
+async function saveBookEdit(bookId){
   const b=books.find(x=>x.id===bookId);if(!b)return;
+  const title=document.getElementById(`mgmt-title-${bookId}`)?.value.trim()||b.title;
+  const author=document.getElementById(`mgmt-author-${bookId}`)?.value.trim()||"";
   const rec=document.getElementById(`mgmt-rec-text-${bookId}`)?.value.trim()||"";
+  b.title=title;b.author=author;
+  if(mgmtPendingCover){b.coverImage=mgmtPendingCover;mgmtPendingCover=null;}
   b.recommendation=rec;
-  // loansに更新記録を保存（GASのsaveBooksはrecommendationを保存しないため）
-  const recRecord={bookId:b.id,borrower:b.owner,loanDate:"",returnDate:"",recommendation:rec,registeredAt:nowDatetime()};
-  loans.push(recRecord);
-  localStorage.setItem("lending_loans",JSON.stringify(loans));
-  gasPost({action:"saveLoans",loans:[recRecord]});
-  saveAll();
-  renderMgmt();
-  showToast(`「${b.title}」の見どころを保存しました`);
+  if(rec){
+    const recRecord={bookId:b.id,borrower:b.owner,loanDate:"",returnDate:"",recommendation:rec,registeredAt:nowDatetime()};
+    loans.push(recRecord);
+    localStorage.setItem("lending_loans",JSON.stringify(loans));
+    gasPost({action:"saveLoans",loans:[recRecord]});
+  }
+  saveAll();renderMgmt();
+  showToast(`「${b.title}」を更新しました`);
 }
 function confirmDeleteOwner(name){
   const owned=books.filter(b=>b.owner===name).length;
@@ -1234,7 +1308,6 @@ function resetModal(){
   setStatus("","");
   document.getElementById("lookup-state").classList.remove("active");
   document.getElementById("book-preview").classList.remove("active");
-  document.getElementById("photo-capture-area").classList.remove("active");
   document.getElementById("photo-preview-wrap").classList.remove("active");
   document.getElementById("photo-uploading").classList.remove("active");
   document.getElementById("photo-preview-img").src="";
@@ -1340,14 +1413,12 @@ async function fetchBookInfo(isbn){
     setStatus(`「${title}」を取得しました ✦`,"found");
     document.getElementById("modal-sub").textContent="内容を確認して登録してください";
     document.getElementById("rescan-btn").classList.add("active");
-    document.getElementById("photo-capture-area").classList.add("active");
     syncBtn();
   }catch(e){
     document.getElementById("lookup-state").classList.remove("active");
     setStatus(`取得失敗 — 手動入力してください (${e.message})`,"error");
     document.getElementById("modal-sub").textContent="手動でタイトルを入力してください";
     document.getElementById("rescan-btn").classList.add("active");
-    document.getElementById("photo-capture-area").classList.add("active");
     document.getElementById("manual-title").focus();
   }
 }
