@@ -84,7 +84,7 @@
   .book-thumb img,.book-thumb svg{width:100%;height:100%;object-fit:cover;}
   .book-info{flex:1;min-width:0;}
   .book-title{font-size:14px;font-weight:600;margin-bottom:3px;white-space:nowrap;overflow:hidden;color:var(--ink);}
-  .book-title .title-text{display:inline-block;white-space:nowrap;}
+  .book-title .title-text{display:inline-block;white-space:nowrap;transform:translateZ(0);}
   .book-title.scrolling .title-text{animation:marquee-loop var(--marquee-duration,6s) linear infinite;}
   .book-author{font-family:'DM Mono',monospace;font-size:10px;color:var(--ink3);margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
   .book-meta{font-family:'DM Mono',monospace;font-size:10px;color:var(--ink3);}
@@ -359,7 +359,7 @@
   .rank-thumb img,.rank-thumb svg{width:100%;height:100%;object-fit:cover;}
   .rank-info{flex:1;min-width:0;}
   .rank-title{font-size:13px;font-weight:600;color:var(--ink);white-space:nowrap;overflow:hidden;margin-bottom:2px;}
-  .rank-title .title-text{display:inline-block;white-space:nowrap;}
+  .rank-title .title-text{display:inline-block;white-space:nowrap;transform:translateZ(0);}
   .rank-title.scrolling .title-text{animation:marquee-loop var(--marquee-duration,6s) linear infinite;}
   .rank-author{font-family:'DM Mono',monospace;font-size:9px;color:var(--ink3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 
@@ -381,7 +381,7 @@
   .weekly-cover img,.weekly-cover svg{width:100%;height:100%;object-fit:cover;}
   .weekly-info{flex:1;min-width:0;}
   .weekly-title{font-size:13px;font-weight:600;color:var(--ink);white-space:nowrap;overflow:hidden;margin-bottom:2px;}
-  .weekly-title .title-text{display:inline-block;white-space:nowrap;}
+  .weekly-title .title-text{display:inline-block;white-space:nowrap;transform:translateZ(0);}
   .weekly-title.scrolling .title-text{animation:marquee-loop var(--marquee-duration,6s) linear infinite;}
   .weekly-author{font-family:'DM Mono',monospace;font-size:9px;color:var(--ink3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:4px;}
   .weekly-summary{font-size:11px;color:var(--ink3);line-height:1.6;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;}
@@ -1194,23 +1194,25 @@ function addOwner(){
 }
 /* ════ タイトルマーキー（左流れループ・一定速度） ════ */
 function applyMarquee(){
-  const PX_PER_SEC=50; // スクロール速度（px/秒）固定
-  const GAP='      '; // セパレーター（enスペース×6）
-  document.querySelectorAll('.book-title .title-text,.rank-title .title-text,.weekly-title .title-text').forEach(span=>{
-    const par=span.parentElement;
-    par.classList.remove('scrolling');
-    const origW=span.scrollWidth;
-    if(origW<=par.clientWidth+2)return;
-    // テキストを複製して継ぎ目なしループを実現
-    const origText=span.textContent;
-    span.textContent=origText+GAP+origText;
-    // 1ループ分の距離 = 前半（テキスト＋ギャップ）の幅
-    const halfW=span.scrollWidth-origW;
-    // 速度一定：長いタイトルほど時間をかける
-    par.style.setProperty('--marquee-loop-dist',(-halfW)+'px');
-    par.style.setProperty('--marquee-duration',(halfW/PX_PER_SEC)+'s');
-    par.classList.add('scrolling');
-  });
+  const PX_PER_SEC=50;
+  const GAP='        ';
+  const run=()=>{
+    document.querySelectorAll('.book-title .title-text,.rank-title .title-text,.weekly-title .title-text').forEach(span=>{
+      const par=span.parentElement;
+      par.classList.remove('scrolling');
+      if(span.dataset.orig!==undefined){span.textContent=span.dataset.orig;delete span.dataset.orig;}
+      const origW=span.scrollWidth;
+      if(origW<=par.clientWidth+2)return;
+      const origText=span.textContent;
+      span.dataset.orig=origText;
+      span.textContent=origText+GAP+origText;
+      const halfW=Math.round(span.scrollWidth-origW);
+      par.style.setProperty('--marquee-loop-dist',(-halfW)+'px');
+      par.style.setProperty('--marquee-duration',(halfW/PX_PER_SEC).toFixed(2)+'s');
+      par.classList.add('scrolling');
+    });
+  };
+  (document.fonts&&document.fonts.ready?document.fonts.ready:Promise.resolve()).then(run);
 }
 
 /* ════ 星評価 ════ */
