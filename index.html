@@ -83,9 +83,12 @@
   .book-thumb{width:44px;height:60px;border-radius:2px;border:1px solid var(--border2);flex-shrink:0;background:var(--surface2);overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:20px;box-shadow:2px 2px 8px rgba(0,0,0,.4);}
   .book-thumb img,.book-thumb svg{width:100%;height:100%;object-fit:cover;}
   .book-info{flex:1;min-width:0;}
-  .book-title{font-size:14px;font-weight:600;margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--ink);}
+  .book-title{font-size:14px;font-weight:600;margin-bottom:3px;white-space:nowrap;overflow:hidden;color:var(--ink);}
+  .book-title .title-text{display:inline-block;white-space:nowrap;}
+  .book-title.scrolling .title-text{animation:marquee-slide 6s ease-in-out infinite alternate;}
   .book-author{font-family:'DM Mono',monospace;font-size:10px;color:var(--ink3);margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
   .book-meta{font-family:'DM Mono',monospace;font-size:10px;color:var(--ink3);}
+  .book-stars{color:var(--gold);letter-spacing:1px;}
 
   /* ── バッジ ── */
   .badge{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.1em;padding:3px 9px;border-radius:2px;flex-shrink:0;text-transform:uppercase;}
@@ -162,6 +165,7 @@
   .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
 
   .screen{animation:fadeIn .22s ease;}
+  @keyframes marquee-slide{0%,15%{transform:translateX(0);}85%,100%{transform:translateX(var(--slide-dist,0px));}}
   @keyframes fadeIn{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
   .hidden{display:none!important;}
 
@@ -265,6 +269,13 @@
   .add-owner-btn{padding:10px 18px;border:none;border-radius:2px;background:var(--gold);color:#0f1117;font-family:'Noto Serif JP',serif;font-size:14px;font-weight:600;cursor:pointer;transition:background .15s;white-space:nowrap;}
   .add-owner-btn:hover{background:var(--gold2);}
 
+  /* ── 星評価 ── */
+  .detail-stars{text-align:center;margin-bottom:10px;font-size:18px;letter-spacing:4px;color:var(--gold);}
+  .mgmt-star-row{display:flex;gap:2px;align-items:center;flex-shrink:0;}
+  .mgmt-star-btn{background:none;border:none;cursor:pointer;font-size:20px;padding:2px 3px;color:var(--border2);transition:color .15s;line-height:1;}
+  .mgmt-star-btn.active{color:var(--gold);}
+  .mgmt-star-btn:hover{color:var(--gold2);}
+
   /* ── 蔵書の見どころ編集 ── */
   .mgmt-book-row{background:var(--surface);border:1px solid var(--border);border-radius:3px;margin-bottom:8px;overflow:hidden;}
   .mgmt-book-header{display:flex;align-items:center;gap:10px;padding:10px 14px;cursor:pointer;}
@@ -334,7 +345,9 @@
   }
   .rank-thumb img,.rank-thumb svg{width:100%;height:100%;object-fit:cover;}
   .rank-info{flex:1;min-width:0;}
-  .rank-title{font-size:13px;font-weight:600;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:2px;}
+  .rank-title{font-size:13px;font-weight:600;color:var(--ink);white-space:nowrap;overflow:hidden;margin-bottom:2px;}
+  .rank-title .title-text{display:inline-block;white-space:nowrap;}
+  .rank-title.scrolling .title-text{animation:marquee-slide 6s ease-in-out infinite alternate;}
   .rank-author{font-family:'DM Mono',monospace;font-size:9px;color:var(--ink3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 
   /* ════ ⑤ 週間ピックアップセクション ════ */
@@ -354,7 +367,9 @@
   }
   .weekly-cover img,.weekly-cover svg{width:100%;height:100%;object-fit:cover;}
   .weekly-info{flex:1;min-width:0;}
-  .weekly-title{font-size:13px;font-weight:600;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:2px;}
+  .weekly-title{font-size:13px;font-weight:600;color:var(--ink);white-space:nowrap;overflow:hidden;margin-bottom:2px;}
+  .weekly-title .title-text{display:inline-block;white-space:nowrap;}
+  .weekly-title.scrolling .title-text{animation:marquee-slide 6s ease-in-out infinite alternate;}
   .weekly-author{font-family:'DM Mono',monospace;font-size:9px;color:var(--ink3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:4px;}
   .weekly-summary{font-size:11px;color:var(--ink3);line-height:1.6;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;}
 
@@ -599,6 +614,12 @@ function reconstructBookExtras(){
       const dup=b.reviews.some(r=>r.borrower===ret.borrower&&r.date===ret.returnDate);
       if(!dup)b.reviews.push({borrower:ret.borrower||"",text:ret.review,date:ret.returnDate});
     });
+    // 星評価をloans記録から復元
+    const starRecs=loans
+      .filter(l=>String(l.bookId)===String(b.id)&&l.stars!==undefined&&l.stars!=="")
+      .sort((a,z)=>new Date(z.registeredAt||z.loanDate||0)-new Date(a.registeredAt||a.loanDate||0));
+    if(starRecs.length>0){b.stars=Number(starRecs[0].stars);}
+    else if(!b.stars){b.stars=0;}
   });
 }
 
@@ -608,7 +629,7 @@ async function init(){
     const data=await gasGet();
     owners=data.owners&&data.owners.length?data.owners:defaultOwners;
     books=data.books&&data.books.length
-      ?data.books.map(b=>({recommendation:"",reviews:[],...b,id:Number(b.id)||Date.now()}))
+      ?data.books.map(b=>({recommendation:"",reviews:[],stars:0,...b,id:Number(b.id)||Date.now()}))
       :defaultBooks;
     loans=data.loans&&data.loans.length?data.loans:[];
   }catch(e){
@@ -791,13 +812,14 @@ function renderRankingSection(ranking){
       <div class="rank-medal">${medal}</div>
       <div class="rank-thumb">${coverInnerHtml(book)}</div>
       <div class="rank-info">
-        <div class="rank-title">${book.title}</div>
+        <div class="rank-title"><span class="title-text">${book.title}</span></div>
         <div class="rank-author">${book.author||""}</div>
       </div>
     </div>`;
   });
   html+="</div>";
   sec.innerHTML=html;
+  requestAnimationFrame(applyMarquee);
 }
 
 async function renderWeeklyPick(){
@@ -875,10 +897,11 @@ async function renderWeeklyPick(){
   const inner=document.getElementById("weekly-pick-inner");
   if(!inner)return;
   inner.setAttribute("onclick",`selectBookFromRanking(${pick.id})`);
+  requestAnimationFrame(applyMarquee);
   inner.innerHTML=`<div class="weekly-pick-content">
     <div class="weekly-cover">${coverInnerHtml(pick)}</div>
     <div class="weekly-info">
-      <div class="weekly-title">${pick.title}</div>
+      <div class="weekly-title"><span class="title-text">${pick.title}</span></div>
       <div class="weekly-author">${pick.author||""}</div>
       ${summary?`<div class="weekly-summary">${summary}</div>`:""}
     </div>
@@ -933,11 +956,16 @@ function renderBooks(){
   const list=document.getElementById("book-list");list.innerHTML="";
   const my=books.filter(b=>b.owner===currentOwner);
   if(!my.length){list.innerHTML='<div class="empty-state">蔵書がありません</div>';return;}
+  // おすすめ度（星）が高い順に並べ替え
+  my.sort((a,b)=>(b.stars||0)-(a.stars||0));
   my.forEach(b=>{
     const div=document.createElement("div");div.className="book-card";
-    div.innerHTML=`${thumbHtml(b)}<div class="book-info"><div class="book-title">${b.title}</div><div class="book-author">${b.author||""}</div><div class="book-meta">${b.status==="borrowed"?"→ "+b.borrower:"—"}</div></div><span class="badge ${b.status==="available"?"available":"borrowed"}">${b.status==="available"?"貸出可":"貸出中"}</span>`;
+    const starsStr=b.stars?`<span class="book-stars">${"★".repeat(b.stars)}</span> `:"";
+    const statusStr=b.status==="borrowed"?"→ "+b.borrower:"—";
+    div.innerHTML=`${thumbHtml(b)}<div class="book-info"><div class="book-title"><span class="title-text">${b.title}</span></div><div class="book-author">${b.author||""}</div><div class="book-meta">${starsStr}${statusStr}</div></div><span class="badge ${b.status==="available"?"available":"borrowed"}">${b.status==="available"?"貸出可":"貸出中"}</span>`;
     div.onclick=()=>selectBook(b.id);list.appendChild(div);
   });
+  requestAnimationFrame(applyMarquee);
 }
 function selectBook(id){
   currentBookId=id;showScreen("screen-detail");
@@ -990,6 +1018,7 @@ function renderDetail(){
     <div class="detail-cover-wrap"><div class="detail-cover">${cover}</div></div>
     <div class="detail-title">${b.title}</div>
     ${b.author?`<div class="detail-author">${b.author}</div>`:""}
+    ${b.stars?`<div class="detail-stars">${"★".repeat(b.stars)}${"☆".repeat(3-b.stars)}</div>`:""}
     <div class="detail-owner">所有者：${b.owner}</div>
     ${recHtml}
     ${reviewsHtml}
@@ -1097,14 +1126,17 @@ function renderMgmt(){
   if(!books.length){bookList.innerHTML='<div class="empty-state" style="padding:24px 0">登録された本がありません</div>';return;}
   books.forEach(b=>{
     const div=document.createElement("div");div.className="mgmt-book-row";div.id=`mgmt-book-${b.id}`;
+    const curStars=b.stars||0;
+    const starBtns=[1,2,3].map(n=>`<button class="mgmt-star-btn${curStars>=n?" active":""}" onclick="saveStars(${b.id},${curStars===n?0:n})" title="${n}つ星">★</button>`).join("");
     div.innerHTML=`
       <div class="mgmt-book-header">
         <div class="mgmt-book-thumb">${coverInnerHtml(b)}</div>
         <div class="mgmt-book-meta">
           <div class="mgmt-book-title">${b.title}</div>
           <div class="mgmt-book-owner">${b.owner}</div>
-          ${b.recommendation?`<div class="mgmt-book-rec-preview">✦ ${b.recommendation}</div>`:'<div class="mgmt-book-rec-preview" style="color:var(--ink3);opacity:.5">未入力</div>'}
+          ${b.recommendation?`<div class="mgmt-book-rec-preview">✦ ${b.recommendation}</div>`:'<div class="mgmt-book-rec-preview" style="color:var(--ink3);opacity:.5">見どころ未入力</div>'}
         </div>
+        <div class="mgmt-star-row">${starBtns}</div>
         <button class="mgmt-book-edit-btn" id="mgmt-edit-btn-${b.id}" onclick="toggleRecEdit(${b.id})">編集</button>
       </div>
       <div class="mgmt-book-rec-form hidden" id="mgmt-rec-form-${b.id}">
@@ -1122,6 +1154,32 @@ function addOwner(){
   owners.push({name,emoji:EMOJI_POOL[owners.length%EMOJI_POOL.length]});
   saveAll();input.value="";renderMgmt();renderOwners();showToast(`「${name}」を追加しました`);
 }
+/* ════ タイトルマーキー ════ */
+function applyMarquee(){
+  document.querySelectorAll('.book-title .title-text,.rank-title .title-text,.weekly-title .title-text').forEach(span=>{
+    const par=span.parentElement;
+    par.classList.remove('scrolling');
+    const overflow=span.scrollWidth-par.clientWidth;
+    if(overflow>2){
+      par.style.setProperty('--slide-dist',(-overflow)+'px');
+      par.classList.add('scrolling');
+    }
+  });
+}
+
+/* ════ 星評価 ════ */
+function saveStars(bookId,stars){
+  const b=books.find(x=>x.id===bookId);if(!b)return;
+  b.stars=stars;
+  const rec={bookId:b.id,borrower:b.owner,loanDate:"",returnDate:"",stars:stars,registeredAt:nowDatetime()};
+  loans.push(rec);
+  localStorage.setItem("lending_loans",JSON.stringify(loans));
+  gasPost({action:"saveLoans",loans:[rec]});
+  saveAll();
+  renderMgmt();
+  showToast(`「${b.title}」のおすすめ度を${stars?stars+"つ星に設定":"リセット"}しました`);
+}
+
 function toggleRecEdit(bookId){
   const form=document.getElementById(`mgmt-rec-form-${bookId}`);
   const btn=document.getElementById(`mgmt-edit-btn-${bookId}`);
@@ -1367,7 +1425,7 @@ async function confirmRegister(){
   document.getElementById("register-confirm-btn").disabled=true;
   document.getElementById("register-confirm-btn").textContent="保存中…";
   const newId=Date.now();
-  books.push({id:newId,owner:currentOwner,title,author,isbn,coverImage:cover,emoji:"📖",status:"available",borrower:"",recommendation:rec,reviews:[]});
+  books.push({id:newId,owner:currentOwner,title,author,isbn,coverImage:cover,emoji:"📖",status:"available",borrower:"",recommendation:rec,stars:0,reviews:[]});
   // 登録時のおすすめポイントをloansに保存（GASのsaveBooksはrecommendationを保存しないため）
   if(rec){
     const regRecord={bookId:newId,borrower:currentOwner,loanDate:"",returnDate:"",recommendation:rec,registeredAt:nowDatetime()};
