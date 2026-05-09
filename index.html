@@ -25,7 +25,7 @@
     --shadow:  rgba(0,0,0,0.4);
   }
   *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
-  body{font-family:'Noto Serif JP',serif;background:var(--bg);color:var(--ink);min-height:100vh;overflow-x:hidden;}
+  body{font-family:'Noto Serif JP',serif;background:var(--bg);color:var(--ink);min-height:100vh;overflow-x:clip;}
 
   /* 背景グレイン */
   body::before{
@@ -330,7 +330,8 @@
   .result-icon{font-size:40px;margin-bottom:16px;line-height:1;}
   .result-title{font-family:'Cormorant Garamond',serif;font-size:20px;font-weight:600;margin-bottom:8px;color:var(--gold2);}
   .result-body{font-family:'DM Mono',monospace;font-size:11px;color:var(--ink3);letter-spacing:.06em;line-height:1.8;margin-bottom:26px;white-space:pre-line;}
-  .result-btn{width:100%;padding:13px 0;border:none;border-radius:2px;font-family:'Noto Serif JP',serif;font-size:14px;font-weight:600;cursor:pointer;transition:all .16s;}
+  .result-btn{width:100%;padding:13px 0;border:none;border-radius:2px;font-family:'Noto Serif JP',serif;font-size:14px;font-weight:600;cursor:pointer;transition:all .16s;touch-action:manipulation;-webkit-tap-highlight-color:transparent;}
+  .confirm-btns button{touch-action:manipulation;-webkit-tap-highlight-color:transparent;}
   .result-btn.ok{background:var(--gold);color:#0f1117;}
   .result-btn.ok:hover{background:var(--gold2);}
   .result-btn.warn{background:transparent;color:var(--ink2);border:1px solid var(--border2);}
@@ -828,7 +829,8 @@ function showResult(icon,title,body,btnLabel="OK",btnStyle="ok",onClose=null){
 }
 function closeResult(){
   document.getElementById("result-overlay").classList.add("hidden");
-  if(_resultCb){_resultCb();_resultCb=null;}
+  const cb=_resultCb;_resultCb=null;
+  if(cb){try{cb();}catch(e){console.error("closeResult cb error",e);}}
 }
 
 /* ════ ③ 貸出回数ランキング計算 ════ */
@@ -1429,7 +1431,7 @@ function openConfirm(title,body,onOk){
   _cb=onOk;document.getElementById("confirm-overlay").classList.remove("hidden");
 }
 function closeConfirm(){document.getElementById("confirm-overlay").classList.add("hidden");_cb=null;}
-document.getElementById("confirm-ok-btn").onclick=()=>{if(_cb)_cb();closeConfirm();};
+document.getElementById("confirm-ok-btn").onclick=()=>{const cb=_cb;_cb=null;closeConfirm();if(cb){try{cb();}catch(e){console.error("confirmOk cb error",e);}}};
 
 /* ════ ナビ ════ */
 function backToOwners(){showScreen("screen-owners");renderOwners();}
