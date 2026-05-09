@@ -854,7 +854,10 @@ function computeRanking(){
     });
     if(bestIdx>=0){
       usedSet.add(bestIdx);
-      counts[ret.bookId]=(counts[ret.bookId]||0)+1;
+      const durationMin=(retTime-bestTime)/60000;
+      if(durationMin>=10){
+        counts[ret.bookId]=(counts[ret.bookId]||0)+1;
+      }
     }
   });
 
