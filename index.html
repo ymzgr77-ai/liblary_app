@@ -315,6 +315,18 @@
   .mgmt-book-rec-save:hover{background:var(--gold2);}
   .mgmt-uploading{font-family:'DM Mono',monospace;font-size:9px;color:var(--ink3);letter-spacing:.06em;text-align:center;}
 
+  /* ── 蔵書編集・所有者グループ ── */
+  .mgmt-owner-group{margin-bottom:10px;}
+  .mgmt-owner-toggle{display:flex;align-items:center;gap:10px;padding:11px 14px;background:var(--surface2);border:1px solid var(--border2);border-radius:3px;cursor:pointer;user-select:none;transition:border-color .15s;touch-action:manipulation;-webkit-tap-highlight-color:transparent;}
+  .mgmt-owner-toggle:hover,.mgmt-owner-toggle.open{border-color:var(--gold);}
+  .mgmt-owner-toggle.open{border-bottom-left-radius:0;border-bottom-right-radius:0;}
+  .mgmt-owner-toggle-arrow{font-size:13px;color:var(--gold);transition:transform .2s;}
+  .mgmt-owner-toggle.open .mgmt-owner-toggle-arrow{transform:rotate(90deg);}
+  .mgmt-owner-books{display:none;border:1px solid var(--border2);border-top:none;border-radius:0 0 3px 3px;overflow:hidden;}
+  .mgmt-owner-books.open{display:block;}
+  .mgmt-owner-books .mgmt-book-row{margin-bottom:0;border-radius:0;border-left:none;border-right:none;border-bottom:1px solid var(--border);}
+  .mgmt-owner-books .mgmt-book-row:last-child{border-bottom:none;}
+
   /* ── 確認ダイアログ ── */
   .confirm-overlay{position:fixed;inset:0;background:rgba(0,0,0,.8);backdrop-filter:blur(4px);z-index:400;display:flex;align-items:center;justify-content:center;padding:24px;}
   .confirm-overlay.hidden{display:none!important;}
@@ -1200,10 +1212,27 @@ function renderMgmt(){
       list.appendChild(div);
     });
   }
-  // 蔵書の見どころリスト
+  // 蔵書の見どころリスト（所有者グループ別）
   const bookList=document.getElementById("mgmt-book-list");bookList.innerHTML="";
   if(!books.length){bookList.innerHTML='<div class="empty-state" style="padding:24px 0">登録された本がありません</div>';return;}
-  books.forEach(b=>{
+  // 所有者順にグループ化
+  const ownerOrder=owners.map(o=>o.name);
+  books.forEach(b=>{if(!ownerOrder.includes(b.owner))ownerOrder.push(b.owner);});
+  ownerOrder.forEach((ownerName,gIdx)=>{
+    const ownerBooks=books.filter(b=>b.owner===ownerName);
+    if(!ownerBooks.length)return;
+    const o=owners.find(x=>x.name===ownerName);
+    const emoji=o?(o.emoji||"📚"):"📚";
+    const groupDiv=document.createElement("div");groupDiv.className="mgmt-owner-group";
+    // 所有者トグルヘッダー
+    const toggleDiv=document.createElement("div");
+    toggleDiv.className="mgmt-owner-toggle";toggleDiv.id=`mgmt-owner-toggle-${gIdx}`;
+    toggleDiv.innerHTML=`<span style="font-size:20px">${emoji}</span><span style="flex:1;font-size:13px;font-weight:600;color:var(--ink);letter-spacing:.03em">${ownerName}</span><span style="font-family:'DM Mono',monospace;font-size:10px;color:var(--ink3)">${ownerBooks.length}冊</span><span class="mgmt-owner-toggle-arrow">›</span>`;
+    toggleDiv.onclick=()=>toggleOwnerGroup(gIdx);
+    groupDiv.appendChild(toggleDiv);
+    // 書籍リストコンテナ
+    const booksDiv=document.createElement("div");booksDiv.className="mgmt-owner-books";booksDiv.id=`mgmt-owner-books-${gIdx}`;
+    ownerBooks.forEach(b=>{
     const div=document.createElement("div");div.className="mgmt-book-row";div.id=`mgmt-book-${b.id}`;
     const curStars=b.stars||0;
     const noStarBtn=`<button class="mgmt-star-btn mgmt-nostar-btn${curStars===0?" active":""}" onclick="saveStars(${b.id},0)" title="無印">−</button>`;
@@ -1216,7 +1245,6 @@ function renderMgmt(){
         <div class="mgmt-book-thumb">${coverInnerHtml(b)}</div>
         <div class="mgmt-book-meta">
           <div class="mgmt-book-title">${b.title}</div>
-          <div class="mgmt-book-owner">${b.owner}</div>
           ${b.recommendation?`<div class="mgmt-book-rec-preview">✦ ${b.recommendation}</div>`:'<div class="mgmt-book-rec-preview" style="color:var(--ink3);opacity:.5">見どころ未入力</div>'}
         </div>
         <div class="mgmt-star-row">${starBtns}</div>
@@ -1246,9 +1274,18 @@ function renderMgmt(){
         </div>
         <button class="mgmt-book-rec-save" onclick="saveBookEdit(${b.id})">保存する</button>
       </div>`;
-    bookList.appendChild(div);
-  });
+      booksDiv.appendChild(div);
+    });// ownerBooks.forEach end
+    groupDiv.appendChild(booksDiv);
+    bookList.appendChild(groupDiv);
+  });// ownerOrder.forEach end
   renderBackupInfo();
+}
+function toggleOwnerGroup(idx){
+  const toggle=document.getElementById(`mgmt-owner-toggle-${idx}`);
+  const booksDiv=document.getElementById(`mgmt-owner-books-${idx}`);
+  const open=booksDiv.classList.toggle("open");
+  toggle.classList.toggle("open",open);
 }
 function addOwner(){
   const input=document.getElementById("new-owner-input");
