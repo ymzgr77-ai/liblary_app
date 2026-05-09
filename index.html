@@ -336,7 +336,7 @@
   .confirm-btns{display:flex;gap:10px;}
 
   /* ── 操作結果ポップアップ ── */
-  .result-overlay{position:fixed;inset:0;background:rgba(0,0,0,.8);backdrop-filter:blur(4px);z-index:600;display:flex;align-items:center;justify-content:center;padding:24px;animation:overlayIn .18s ease;}
+  .result-overlay{position:fixed;inset:0;background:rgba(0,0,0,.8);backdrop-filter:blur(4px);z-index:600;display:flex;align-items:center;justify-content:center;padding:24px;}
   .result-overlay.hidden{display:none!important;}
   .result-box{background:var(--surface);border:1px solid var(--border2);border-radius:6px;padding:36px 28px;max-width:300px;width:100%;text-align:center;box-shadow:0 12px 48px rgba(0,0,0,.5);animation:fadeIn .2s ease;}
   .result-icon{font-size:40px;margin-bottom:16px;line-height:1;}
@@ -589,8 +589,8 @@
 </div>
 
 <!-- 操作結果ポップアップ -->
-<div class="result-overlay hidden" id="result-overlay">
-  <div class="result-box">
+<div class="result-overlay hidden" id="result-overlay" onclick="closeResult()">
+  <div class="result-box" onclick="event.stopPropagation()">
     <div class="result-icon"  id="result-icon"></div>
     <div class="result-title" id="result-title"></div>
     <div class="result-body"  id="result-body"></div>
@@ -1750,6 +1750,20 @@ window.addEventListener("popstate",(e)=>{
 function getCurrentScreen(){
   return["screen-home","screen-owners","screen-books","screen-detail","screen-mgmt"].find(s=>!document.getElementById(s).classList.contains("hidden"))||"screen-home";
 }
+
+/* ════ ポップアップボタン確実登録（onclick属性の補完） ════ */
+(function(){
+  // result-btn: onclick属性に加えてaddEventListenerでも登録
+  const rb=document.getElementById("result-btn");
+  if(rb)rb.addEventListener("click",function(e){e.stopPropagation();closeResult();});
+  // confirm-ok-btn: onclickプロパティに加えてaddEventListenerでも登録
+  const cb=document.getElementById("confirm-ok-btn");
+  if(cb)cb.addEventListener("click",function(e){
+    e.stopPropagation();
+    const fn=_cb;_cb=null;closeConfirm();
+    if(fn){try{fn();}catch(ex){console.error("confirm cb",ex);}}
+  });
+})();
 </script>
 </body>
 </html>
