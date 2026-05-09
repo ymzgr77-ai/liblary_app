@@ -274,6 +274,13 @@
   .mgmt-star-btn:hover{color:var(--gold2);}
   .mgmt-nostar-btn{font-size:14px;padding:2px 5px;border:1px solid var(--border);border-radius:2px;color:var(--ink3);}
   .mgmt-nostar-btn.active{border-color:var(--gold);color:var(--gold);}
+  /* 登録モーダル星評価 */
+  .reg-star-group{display:flex;gap:6px;margin-top:4px;}
+  .reg-star-btn{background:none;border:1px solid var(--border);border-radius:2px;cursor:pointer;font-size:18px;padding:3px 8px;color:var(--border2);transition:color .15s,border-color .15s;line-height:1;}
+  .reg-star-btn.active{color:var(--gold);border-color:var(--gold);}
+  .reg-star-btn:hover{color:var(--gold2);border-color:var(--gold2);}
+  .reg-nostar-btn{font-size:13px;padding:3px 10px;color:var(--ink3);}
+  .reg-nostar-btn.active{border-color:var(--gold);color:var(--gold);}
   .mgmt-nostar-btn:hover{border-color:var(--gold2);color:var(--gold2);}
 
   /* ── 蔵書の見どころ編集 ── */
@@ -538,6 +545,15 @@
       <div class="field-group">
         <div class="field-label">✦ おすすめポイント（任意）</div>
         <textarea class="field-input" id="reg-recommendation" rows="2" placeholder="この本の見どころを一言…" maxlength="200" style="resize:vertical;min-height:56px"></textarea>
+      </div>
+      <div class="field-group">
+        <div class="field-label">★ おすすめ度（任意）</div>
+        <div class="reg-star-group">
+          <button class="reg-star-btn reg-nostar-btn active" data-stars="0" onclick="setRegStars(0)">無印</button>
+          <button class="reg-star-btn" data-stars="1" onclick="setRegStars(1)">★</button>
+          <button class="reg-star-btn" data-stars="2" onclick="setRegStars(2)">★★</button>
+          <button class="reg-star-btn" data-stars="3" onclick="setRegStars(3)">★★★</button>
+        </div>
       </div>
     </div>
     <div class="btn-group">
@@ -1424,6 +1440,15 @@ function backToBooks(){
 
 /* ════ スキャナー ════ */
 let html5QrCode=null,scannedIsbn=null,pendingBook=null,capturedPhotoDataUrl=null;
+let regStars=0;
+function setRegStars(n){
+  regStars=n;
+  document.querySelectorAll('.reg-star-btn').forEach(b=>{
+    const v=Number(b.dataset.stars);
+    if(v===0)b.classList.toggle('active',n===0);
+    else b.classList.toggle('active',v<=n);
+  });
+}
 
 function resetModal(){
   scannedIsbn=null;pendingBook=null;capturedPhotoDataUrl=null;
@@ -1436,6 +1461,7 @@ function resetModal(){
   document.getElementById("manual-title").value="";
   document.getElementById("manual-author").value="";
   document.getElementById("reg-recommendation").value="";
+  regStars=0;setRegStars(0);
   document.getElementById("register-confirm-btn").disabled=true;
   document.getElementById("rescan-btn").classList.remove("active");
   document.getElementById("scanner-stopped").classList.remove("active");
@@ -1591,8 +1617,9 @@ async function onPhotoSelected(event){
         syncBtn();
       }catch(err){
         document.getElementById("photo-uploading").classList.remove("active");
-        showToast("アップロード失敗：写真なしで登録されます");
-        capturedPhotoDataUrl=null;syncBtn();
+        // base64のままローカル保存（Driveアップロード失敗時のフォールバック）
+        showToast("Drive未接続：表紙は端末内のみ保存されます");
+        syncBtn();
       }
     };
     img.src=dataUrl;
@@ -1618,10 +1645,10 @@ async function confirmRegister(){
   document.getElementById("register-confirm-btn").disabled=true;
   document.getElementById("register-confirm-btn").textContent="保存中…";
   const newId=Date.now();
-  books=deduplicateById([...books,{id:newId,owner:currentOwner,title,author,isbn,coverImage:cover,emoji:"📖",status:"available",borrower:"",recommendation:rec,stars:0,reviews:[]}]);
-  // 登録時のおすすめポイントをloansに保存（GASのsaveBooksはrecommendationを保存しないため）
-  if(rec){
-    const regRecord={bookId:newId,borrower:currentOwner,loanDate:"",returnDate:"",recommendation:rec,registeredAt:nowDatetime()};
+  books=deduplicateById([...books,{id:newId,owner:currentOwner,title,author,isbn,coverImage:cover,emoji:"📖",status:"available",borrower:"",recommendation:rec,stars:regStars,reviews:[]}]);
+  // 登録時のおすすめポイント・星評価をloansに保存
+  const regRecord={bookId:newId,borrower:currentOwner,loanDate:"",returnDate:"",recommendation:rec,stars:regStars,registeredAt:nowDatetime()};
+  if(rec||regStars){
     loans.push(regRecord);
     localStorage.setItem("lending_loans",JSON.stringify(loans));
     gasPost({action:"saveLoans",loans:[regRecord]});
