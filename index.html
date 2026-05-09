@@ -633,6 +633,13 @@ function reconstructBookExtras(){
   });
 }
 
+/* ════ 重複排除（同じIDは後勝ち） ════ */
+function deduplicateById(arr){
+  const map=new Map();
+  arr.forEach(b=>map.set(String(b.id),b));
+  return [...map.values()];
+}
+
 /* ════ 起動 ════ */
 async function init(){
   try{
@@ -648,7 +655,7 @@ async function init(){
     loans=JSON.parse(localStorage.getItem("lending_loans")||"null")||[];
     showToast("オフラインモード：ローカルデータを使用中");
   }
-  books=books.map(b=>({recommendation:"",reviews:[],...b}));
+  books=deduplicateById(books.map(b=>({recommendation:"",reviews:[],...b})));
   // loansからrecommendation/reviewsを復元（GASが保存しないフィールドを補完）
   reconstructBookExtras();
   localStorage.setItem("lending_owners",JSON.stringify(owners));
@@ -674,7 +681,7 @@ async function syncAll(){
   try{
     const data=await gasGet();
     if(data.owners&&data.owners.length)owners=data.owners;
-    if(data.books&&data.books.length)books=data.books.map(b=>({recommendation:"",reviews:[],...b,id:Number(b.id)||Date.now()}));
+    if(data.books&&data.books.length)books=deduplicateById(data.books.map(b=>({recommendation:"",reviews:[],...b,id:Number(b.id)||Date.now()})));
     if(data.loans&&data.loans.length)loans=data.loans;
     // loansからrecommendation/reviewsを復元
     reconstructBookExtras();
@@ -1530,7 +1537,7 @@ async function confirmRegister(){
   document.getElementById("register-confirm-btn").disabled=true;
   document.getElementById("register-confirm-btn").textContent="保存中…";
   const newId=Date.now();
-  books.push({id:newId,owner:currentOwner,title,author,isbn,coverImage:cover,emoji:"📖",status:"available",borrower:"",recommendation:rec,stars:0,reviews:[]});
+  books=deduplicateById([...books,{id:newId,owner:currentOwner,title,author,isbn,coverImage:cover,emoji:"📖",status:"available",borrower:"",recommendation:rec,stars:0,reviews:[]}]);
   // 登録時のおすすめポイントをloansに保存（GASのsaveBooksはrecommendationを保存しないため）
   if(rec){
     const regRecord={bookId:newId,borrower:currentOwner,loanDate:"",returnDate:"",recommendation:rec,registeredAt:nowDatetime()};
