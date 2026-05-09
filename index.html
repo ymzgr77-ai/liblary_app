@@ -968,7 +968,7 @@ function renderOwners(){
     const owned=books.filter(b=>b.owner===o.name);
     const borrow=owned.filter(b=>b.status==="borrowed").length;
     const div=document.createElement("div");div.className="owner-card";
-    div.innerHTML=`<div style="display:flex;align-items:center;gap:12px"><span style="font-size:22px">${o.emoji}</span><span class="owner-name">${o.name}</span></div><div style="display:flex;align-items:center;gap:8px"><span class="owner-count">${owned.length}冊${borrow>0?` · 貸出中${borrow}`:""}</span><span class="owner-arrow">›</span></div>`;
+    div.innerHTML=`<div style="display:flex;align-items:center;gap:12px"><span style="font-size:22px">${o.emoji||"📚"}</span><span class="owner-name">${o.name}</span></div><div style="display:flex;align-items:center;gap:8px"><span class="owner-count">${owned.length}冊${borrow>0?` · 貸出中${borrow}`:""}</span><span class="owner-arrow">›</span></div>`;
     div.onclick=()=>selectOwner(o.name);list.appendChild(div);
   });
   updateBreadcrumb([{label:"ホーム",action:"backToHome()"},{label:"持ち主一覧"}]);
@@ -1146,7 +1146,7 @@ function renderMgmt(){
       const owned=books.filter(b=>b.owner===o.name).length;
       const borrow=books.filter(b=>b.owner===o.name&&b.status==="borrowed").length;
       const div=document.createElement("div");div.className="owner-row";
-      div.innerHTML=`<span class="owner-row-emoji">${o.emoji}</span><span class="owner-row-name">${o.name}</span><span class="owner-row-count">${owned}冊${borrow?` · 貸出中${borrow}`:""}</span><button class="owner-row-del" onclick="confirmDeleteOwner('${o.name}')" ${borrow>0?'disabled title="貸出中の本があるため削除できません"':""}>削除</button>`;
+      div.innerHTML=`<span class="owner-row-emoji">${o.emoji||"📚"}</span><span class="owner-row-name">${o.name}</span><span class="owner-row-count">${owned}冊${borrow?` · 貸出中${borrow}`:""}</span><button class="owner-row-del" onclick="confirmDeleteOwner('${o.name}')" ${borrow>0?'disabled title="貸出中の本があるため削除できません"':""}>削除</button>`;
       list.appendChild(div);
     });
   }
