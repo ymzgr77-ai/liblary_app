@@ -619,12 +619,9 @@ function nowDatetime(){
   return `${n.getFullYear()}-${p(n.getMonth()+1)}-${p(n.getDate())}T${p(n.getHours())}:${p(n.getMinutes())}`;
 }
 function formatDatetime(dt){
+  // 内部は分単位で保持・計算、画面表示は日単位（YYYY-MM-DD）
   if(!dt)return"";
-  if(dt.includes("T")){
-    const[d,t]=dt.split("T");
-    return`${d} ${t}`;
-  }
-  return dt;
+  return dt.includes("T")?dt.split("T")[0]:dt;
 }
 
 /* ════ loansからrecommendation/reviewsを再構築（GASがこれらのフィールドを保存しないため） ════ */
