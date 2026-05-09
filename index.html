@@ -722,8 +722,20 @@ async function generateCoverSVG(title,author){
 /* ════ coverImage表示ヘルパー ════ */
 function coverInnerHtml(b){
   if(!b.coverImage)return`<span>${b.emoji||"📖"}</span>`;
-  if(b.coverImage.trimStart().startsWith("<svg"))return b.coverImage;
-  return`<img src="${b.coverImage}" alt="${b.title}" onerror="this.parentNode.innerHTML='<span>📖</span>'">`;
+  const ci=b.coverImage.trimStart();
+  // SVG → base64のdata URLとして<img>表示
+  // （直接innerHTML展開するとSVG内テキストがDOMに漏れ出て見えてしまうため）
+  if(ci.startsWith("<svg")){
+    try{
+      const b64=btoa(unescape(encodeURIComponent(ci)));
+      return`<img src="data:image/svg+xml;base64,${b64}" style="width:100%;height:100%;object-fit:cover" onerror="this.parentNode.innerHTML='<span>📖</span>'">`;
+    }catch(e){return`<span>${b.emoji||"📖"}</span>`;}
+  }
+  // Drive UC形式URL → thumbnailエンドポイントに変換（直リンクがブロックされるケース対策）
+  let src=b.coverImage;
+  const m=src.match(/[?&]id=([\w-]+)/);
+  if(m)src=`https://drive.google.com/thumbnail?id=${m[1]}&sz=w400`;
+  return`<img src="${src}" style="width:100%;height:100%;object-fit:cover" onerror="this.parentNode.innerHTML='<span>📖</span>'">`;
 }
 function thumbHtml(b){
   return`<div class="book-thumb">${coverInnerHtml(b)}</div>`;
