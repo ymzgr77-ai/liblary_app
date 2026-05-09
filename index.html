@@ -850,14 +850,11 @@ function computeRanking(){
       if(ln.borrower!==ret.borrower)return;
       const lnTime=new Date(ln.loanDate).getTime();
       if(isNaN(lnTime))return;
-      if(lnTime<retTime&&lnTime>bestTime){bestTime=lnTime;bestIdx=idx;}
+      if(lnTime<=retTime&&lnTime>bestTime){bestTime=lnTime;bestIdx=idx;}
     });
     if(bestIdx>=0){
       usedSet.add(bestIdx);
-      const durationMin=(retTime-bestTime)/60000;
-      if(durationMin>=10){
-        counts[ret.bookId]=(counts[ret.bookId]||0)+1;
-      }
+      counts[ret.bookId]=(counts[ret.bookId]||0)+1;
     }
   });
 
