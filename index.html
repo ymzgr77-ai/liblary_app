@@ -1191,8 +1191,8 @@ function addOwner(){
 /* ════ タイトルマーキー（左流れループ・一定速度） ════ */
 function applyMarquee(){
   const PX_PER_SEC=50;
-  const INIT_DELAY=1500;  // 初回スクロール開始までの待機(ms)
-  const PAUSE_AFTER=2000; // スクロール後、先頭に戻ってからの待機(ms)
+  const INIT_DELAY=5000;  // 初回スクロール開始までの待機(ms)
+  const PAUSE_AFTER=5000; // スクロール後、先頭に戻ってからの待機(ms)
 
   const run=()=>{
     document.querySelectorAll('.book-title .title-text,.rank-title .title-text,.weekly-title .title-text').forEach(span=>{
@@ -1208,7 +1208,7 @@ function applyMarquee(){
       const contW=par.clientWidth;
       if(origW<=contW+2)return;
       par.classList.add('scrolling');
-      const dist=Math.round(origW-contW); // スクロール距離
+      const dist=Math.round(origW); // スクロール距離（テキスト全体が左端から抜けきるまで）
       const dur=dist/PX_PER_SEC*1000;     // 速度一定（ms）
       const scroll=()=>{
         if(!document.contains(span))return;
