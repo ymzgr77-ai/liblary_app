@@ -84,8 +84,7 @@
   .book-thumb img,.book-thumb svg{width:100%;height:100%;object-fit:cover;}
   .book-info{flex:1;min-width:0;}
   .book-title{font-size:14px;font-weight:600;margin-bottom:3px;white-space:nowrap;overflow:hidden;color:var(--ink);}
-  .book-title .title-text{display:inline-block;white-space:nowrap;transform:translateZ(0);}
-  .book-title.scrolling .title-text{animation:marquee-loop var(--marquee-duration,6s) linear infinite;}
+  .book-title .title-text{display:inline-block;white-space:nowrap;transform:translateZ(0);-webkit-text-size-adjust:100%;text-size-adjust:100%;}
   .book-author{font-family:'DM Mono',monospace;font-size:10px;color:var(--ink3);margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
   .book-meta{font-family:'DM Mono',monospace;font-size:10px;color:var(--ink3);}
   .book-stars{color:var(--gold);letter-spacing:1px;}
@@ -165,7 +164,6 @@
   .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
 
   .screen{animation:fadeIn .22s ease;}
-  @keyframes marquee-loop{0%{transform:translateX(0);}100%{transform:translateX(var(--marquee-loop-dist,0px));}}
   @keyframes fadeIn{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
   .hidden{display:none!important;}
 
@@ -359,8 +357,7 @@
   .rank-thumb img,.rank-thumb svg{width:100%;height:100%;object-fit:cover;}
   .rank-info{flex:1;min-width:0;}
   .rank-title{font-size:13px;font-weight:600;color:var(--ink);white-space:nowrap;overflow:hidden;margin-bottom:2px;}
-  .rank-title .title-text{display:inline-block;white-space:nowrap;transform:translateZ(0);}
-  .rank-title.scrolling .title-text{animation:marquee-loop var(--marquee-duration,6s) linear infinite;}
+  .rank-title .title-text{display:inline-block;white-space:nowrap;transform:translateZ(0);-webkit-text-size-adjust:100%;text-size-adjust:100%;}
   .rank-author{font-family:'DM Mono',monospace;font-size:9px;color:var(--ink3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 
   /* ════ ⑤ 週間ピックアップセクション ════ */
@@ -381,8 +378,7 @@
   .weekly-cover img,.weekly-cover svg{width:100%;height:100%;object-fit:cover;}
   .weekly-info{flex:1;min-width:0;}
   .weekly-title{font-size:13px;font-weight:600;color:var(--ink);white-space:nowrap;overflow:hidden;margin-bottom:2px;}
-  .weekly-title .title-text{display:inline-block;white-space:nowrap;transform:translateZ(0);}
-  .weekly-title.scrolling .title-text{animation:marquee-loop var(--marquee-duration,6s) linear infinite;}
+  .weekly-title .title-text{display:inline-block;white-space:nowrap;transform:translateZ(0);-webkit-text-size-adjust:100%;text-size-adjust:100%;}
   .weekly-author{font-family:'DM Mono',monospace;font-size:9px;color:var(--ink3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:4px;}
   .weekly-summary{font-size:11px;color:var(--ink3);line-height:1.6;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;}
 
@@ -1195,23 +1191,47 @@ function addOwner(){
 /* ════ タイトルマーキー（左流れループ・一定速度） ════ */
 function applyMarquee(){
   const PX_PER_SEC=50;
-  const GAP='        ';
+  const INIT_DELAY=1500;  // 初回スクロール開始までの待機(ms)
+  const PAUSE_AFTER=2000; // スクロール後、先頭に戻ってからの待機(ms)
+
   const run=()=>{
     document.querySelectorAll('.book-title .title-text,.rank-title .title-text,.weekly-title .title-text').forEach(span=>{
+      // 既存のタイマー・アニメーションをキャンセル
+      if(span._mTimer){clearTimeout(span._mTimer);span._mTimer=null;}
+      if(span._mAnim){try{span._mAnim.cancel();}catch(e){}span._mAnim=null;}
+      span.style.transform='';
       const par=span.parentElement;
       par.classList.remove('scrolling');
-      if(span.dataset.orig!==undefined){span.textContent=span.dataset.orig;delete span.dataset.orig;}
+      if(!document.contains(span))return;
+      // テキストの複製は不要（先頭に戻る方式のため）
       const origW=span.scrollWidth;
-      if(origW<=par.clientWidth+2)return;
-      const origText=span.textContent;
-      span.dataset.orig=origText;
-      span.textContent=origText+GAP+origText;
-      const halfW=Math.round(span.scrollWidth-origW);
-      par.style.setProperty('--marquee-loop-dist',(-halfW)+'px');
-      par.style.setProperty('--marquee-duration',(halfW/PX_PER_SEC).toFixed(2)+'s');
+      const contW=par.clientWidth;
+      if(origW<=contW+2)return;
       par.classList.add('scrolling');
+      const dist=Math.round(origW-contW); // スクロール距離
+      const dur=dist/PX_PER_SEC*1000;     // 速度一定（ms）
+      const scroll=()=>{
+        if(!document.contains(span))return;
+        // translate3d を使い描画レイヤーを一定に保つ
+        const a=span.animate(
+          [{transform:'translate3d(0,0,0)'},{transform:'translate3d('+(-dist)+'px,0,0)'}],
+          {duration:dur,easing:'linear',fill:'forwards'}
+        );
+        span._mAnim=a;
+        a.addEventListener('finish',()=>{
+          // 先頭に戻す
+          span.style.transform='translate3d(0,0,0)';
+          try{a.cancel();}catch(e){}
+          span._mAnim=null;
+          // 少し待ってから再スクロール
+          span._mTimer=setTimeout(scroll,PAUSE_AFTER);
+        },{once:true});
+      };
+      // 最初は少し遅らせてから開始
+      span._mTimer=setTimeout(scroll,INIT_DELAY);
     });
   };
+
   (document.fonts&&document.fonts.ready?document.fonts.ready:Promise.resolve()).then(run);
 }
 
