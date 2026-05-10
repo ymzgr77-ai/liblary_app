@@ -858,7 +858,10 @@ function computeRanking(){
     loanRecs.forEach((ln,idx)=>{
       if(usedSet.has(idx))return;
       if(String(ln.bookId)!==String(ret.bookId))return;
-      if(ln.borrower!==ret.borrower)return;
+      // 借り手名照合：どちらかが空欄の場合はペア可能（旧データ・表記ゆれ対策）
+      const lnB=String(ln.borrower||"").trim();
+      const retB=String(ret.borrower||"").trim();
+      if(lnB&&retB&&lnB!==retB)return;
       const lnTime=new Date(ln.loanDate).getTime();
       if(isNaN(lnTime))return;
       if(lnTime<=retTime&&lnTime>bestTime){bestTime=lnTime;bestIdx=idx;}
@@ -871,6 +874,12 @@ function computeRanking(){
       }
     }
   });
+
+  // デバッグ用：全書籍のカウントをコンソールに出力
+  console.log("[Ranking]",Object.entries(counts).map(([id,c])=>{
+    const b=books.find(x=>String(x.id)===String(id));
+    return`${b?b.title:"ID:"+id} → ${c}回`;
+  }).join(" / ")||"ペア成立なし");
 
   return Object.entries(counts)
     .map(([bookId,count])=>({bookId:Number(bookId),count}))
@@ -905,6 +914,7 @@ function renderRankingSection(ranking){
       <div class="rank-info">
         <div class="rank-title"><span class="title-text">${book.title}</span></div>
         <div class="rank-author">${book.author||""}</div>
+        <div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--gold);letter-spacing:.06em;margin-top:2px">${item.count}回貸出</div>
       </div>
     </div>`;
   });
