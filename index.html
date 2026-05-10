@@ -728,6 +728,11 @@ async function saveAll(){
   try{
     await gasPost({action:"saveOwners",owners});
     await gasPost({action:"saveBooks",books});
+    // 貸出回数をスプレッドシートのbooksシートL列に書き込む
+    const ranking=computeRanking();
+    const counts={};
+    ranking.forEach(r=>{counts[String(r.bookId)]=r.count;});
+    gasPost({action:"saveLoanCounts",counts}); // 非同期・失敗しても継続
   }catch(e){showToast("⚠ オフライン：ローカルに保存しました");}
 }
 
@@ -914,7 +919,6 @@ function renderRankingSection(ranking){
       <div class="rank-info">
         <div class="rank-title"><span class="title-text">${book.title}</span></div>
         <div class="rank-author">${book.author||""}</div>
-        <div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--gold);letter-spacing:.06em;margin-top:2px">${item.count}回貸出</div>
       </div>
     </div>`;
   });
